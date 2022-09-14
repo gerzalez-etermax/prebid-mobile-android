@@ -22,7 +22,6 @@ import androidx.annotation.Nullable;
 import org.prebid.mobile.api.exceptions.InitError;
 import org.prebid.mobile.core.BuildConfig;
 import org.prebid.mobile.rendering.listeners.SdkInitializationListener;
-import org.prebid.mobile.rendering.loading.CreativeFactory;
 import org.prebid.mobile.rendering.mraid.MraidEnv;
 import org.prebid.mobile.rendering.sdk.ManagersResolver;
 import org.prebid.mobile.rendering.sdk.SdkInitializer;
@@ -82,6 +81,11 @@ public class PrebidMobile {
      */
     @Deprecated
     public static LogLevel logLevel = LogLevel.NONE;
+
+    /**
+     * Strategy to select de Media File to be render {@link VastMediaSelectionStrategy}
+     */
+    public static VastMediaSelectionStrategy vastMediaSelectionStrategy = VastMediaSelectionStrategy.HIGHT_QUALITY;
 
     /**
      * Banner timeout to retrieve and load creative. Default 6 seconds
@@ -341,6 +345,12 @@ public class PrebidMobile {
         public int getValue() {
             return value;
         }
+    }
+
+    public enum VastMediaSelectionStrategy {
+        HIGHT_QUALITY,
+        MEDIUM_QUALITY,
+        LOW_QUALITY
     }
 
 }
