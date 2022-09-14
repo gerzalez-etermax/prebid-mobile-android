@@ -22,6 +22,7 @@ import androidx.annotation.Nullable;
 import org.prebid.mobile.api.exceptions.InitError;
 import org.prebid.mobile.core.BuildConfig;
 import org.prebid.mobile.rendering.listeners.SdkInitializationListener;
+import org.prebid.mobile.rendering.loading.CreativeFactory;
 import org.prebid.mobile.rendering.mraid.MraidEnv;
 import org.prebid.mobile.rendering.sdk.ManagersResolver;
 import org.prebid.mobile.rendering.sdk.SdkInitializer;
@@ -81,6 +82,21 @@ public class PrebidMobile {
      */
     @Deprecated
     public static LogLevel logLevel = LogLevel.NONE;
+
+    /**
+     * Banner timeout to retrieve and load creative. Default 6 seconds
+     */
+    public static long bannerTimeout = 6 * 1000;
+
+    /**
+     * Interstitial timeout to retrieve and load creative. Default 30 seconds
+     */
+    public static long interstitialTimeout = 30 * 1000;
+
+    /**
+     * Vast timeout to retrieve and load creative. Default 30 seconds
+     */
+    public static long vastTimeout = 30 * 1000;
 
 
     private static boolean pbsDebug = false;
