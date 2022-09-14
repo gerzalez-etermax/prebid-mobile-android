@@ -82,6 +82,8 @@ public class PrebidMobile {
     @Deprecated
     public static LogLevel logLevel = LogLevel.NONE;
 
+    public static VastMediaSelectionStrategy vastMediaSelectionStrategy = VastMediaSelectionStrategy.HIGHT_QUALITY;
+
 
     private static boolean pbsDebug = false;
     private static boolean shareGeoLocation = false;
@@ -325,6 +327,12 @@ public class PrebidMobile {
         public int getValue() {
             return value;
         }
+    }
+
+    public enum VastMediaSelectionStrategy {
+        HIGHT_QUALITY,
+        MEDIUM_QUALITY,
+        LOW_QUALITY
     }
 
 }

@@ -16,11 +16,25 @@
 
 package org.prebid.mobile.rendering.parser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.prebid.mobile.rendering.errors.VastParseError;
 import org.prebid.mobile.rendering.video.VideoAdEvent;
-import org.prebid.mobile.rendering.video.vast.*;
+import org.prebid.mobile.rendering.video.vast.Companion;
+import org.prebid.mobile.rendering.video.vast.Creative;
+import org.prebid.mobile.rendering.video.vast.HTMLResource;
+import org.prebid.mobile.rendering.video.vast.InLine;
+import org.prebid.mobile.rendering.video.vast.StaticResource;
+import org.prebid.mobile.rendering.video.vast.Tracking;
+import org.prebid.mobile.rendering.video.vast.Verification;
 import org.prebid.mobile.test.utils.ResourceUtils;
 import org.robolectric.RobolectricTestRunner;
 
@@ -28,16 +42,14 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 @RunWith(RobolectricTestRunner.class)
 public class AdResponseParserVastTest {
 
     private final static String SAMPLE_GOOD_VAST = "vast_inline_linear.xml";
     private final static String SAMPLE_INLINE_ERROR_VAST = "vast_inline_error.xml";
     private final static String SAMPEL_INLINE_NONLINEAR = "vast_inline_nonlinear.xml";
+    private final static String SAMPLE_INLINE_MULPIPLE_MEDIA = "vast_inline_linear_multiple_media.xml";
+    private final static String SAMPLE_INLINE_SINGLE_MEDIA = "vast_inline_linear_single_media.xml";
     private final static String WRONG_VAST = "vast_xmlError.xml";
     private final static String VAST_ERROR = "vast_error.xml";
     private final static String VAST_WRAPPER_LINEAR_NONLINEAR = "vast_wrapper_linear_nonlinear.xml";
@@ -154,8 +166,48 @@ public class AdResponseParserVastTest {
 
         AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML);
         assertEquals("http://i-cdn.prebid" +
-                     ".com/5a7/5a731840-5ae7-4dca-ba66-6e959bb763e2/be2" +
-                     "/be2cf3b2cf0648e0aa46c7c09afaf3f4.mp4", tempVast.getMediaFileUrl(vast, 0));
+                ".com/5a7/5a731840-5ae7-4dca-ba66-6e959bb763e2/be2" +
+                "/be2cf3b2cf0648e0aa46c7c09afaf3f4.mp4", tempVast.getMediaFileUrl(vast, 0));
+    }
+
+    @Test
+    public void testGetMediumQualityMediaFileUrl() throws Exception {
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULPIPLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, new MediumQualityMediaFileSelector());
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, new MediumQualityMediaFileSelector());
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-1350kbs-29.97fps-48khz-96kbs-720p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=1417&w=1280&h=720&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0));
+    }
+
+    @Test
+    public void testGetMediumQualityMediaFileUrlUniqueUrl() throws Exception {
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_SINGLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, new MediumQualityMediaFileSelector());
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, new MediumQualityMediaFileSelector());
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0));
+    }
+
+    @Test
+    public void testGetLowQualityMediaFileUrl() throws Exception {
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULPIPLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, new LowQualityMediaFileSelector());
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, new LowQualityMediaFileSelector());
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0));
+    }
+
+    @Test
+    public void testGetLowQualityMediaFileUrlUniqueUrl() throws Exception {
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_SINGLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, new LowQualityMediaFileSelector());
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, new LowQualityMediaFileSelector());
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0));
     }
 
     @Test
@@ -165,8 +217,8 @@ public class AdResponseParserVastTest {
 
         AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML);
         assertEquals("http://oxv4support-d3.prebidenterprise.com/v/1.0/ri?did" +
-                     ".adid=2c544905-f613-46ac-95f4-7d81e8fc3505&ts" +
-                     "=1fHU9MXxyaWQ9MmVkNDBjOGYtNjA4YS00ZDY5LWIyNzMtMDBjYWZiNjEyMWQ0fHJ0PTE0MzM4MDQ5Mjd8YXVpZD01MzcwNzQzNzN8YXVtPURNSUQuTElORUFSVklERU98c2lkPTUzNzA2NDIxMXxwdWI9NTM3MDcxNzg3fHBjPVVTRHxyYWlkPTVlOTk0N2E1LWM5YzItNDNjZi1hZTY3LTMzMjZjNWU2N2IwYnxhaWQ9NTM3MTI5MDI1fHQ9M3xhcz02NDB4MzYwfGxpZD01MzcxMDYzNzR8b2lkPTUzNzA4ODg4NnxwPTEwMDB8cHI9MTAwMHxhZHY9NTM3MDcxNzgyfGFjPVVTRHxwbT1QUklDSU5HLkNQTXxibT1CVVlJTkcuTk9OR1VBUkFOVEVFRHx1cj1XUTVDVHpydG51", tempVast.getImpressions(vast, 0).get(0).getValue());
+                ".adid=2c544905-f613-46ac-95f4-7d81e8fc3505&ts" +
+                "=1fHU9MXxyaWQ9MmVkNDBjOGYtNjA4YS00ZDY5LWIyNzMtMDBjYWZiNjEyMWQ0fHJ0PTE0MzM4MDQ5Mjd8YXVpZD01MzcwNzQzNzN8YXVtPURNSUQuTElORUFSVklERU98c2lkPTUzNzA2NDIxMXxwdWI9NTM3MDcxNzg3fHBjPVVTRHxyYWlkPTVlOTk0N2E1LWM5YzItNDNjZi1hZTY3LTMzMjZjNWU2N2IwYnxhaWQ9NTM3MTI5MDI1fHQ9M3xhcz02NDB4MzYwfGxpZD01MzcxMDYzNzR8b2lkPTUzNzA4ODg4NnxwPTEwMDB8cHI9MTAwMHxhZHY9NTM3MDcxNzgyfGFjPVVTRHxwbT1QUklDSU5HLkNQTXxibT1CVVlJTkcuTk9OR1VBUkFOVEVFRHx1cj1XUTVDVHpydG51", tempVast.getImpressions(vast, 0).get(0).getValue());
     }
 
     @Test

@@ -21,6 +21,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import org.prebid.mobile.LogUtil;
+import org.prebid.mobile.PrebidMobile;
 import org.prebid.mobile.api.exceptions.AdException;
 import org.prebid.mobile.rendering.errors.VastParseError;
 import org.prebid.mobile.rendering.models.internal.VastExtractorResult;
@@ -29,6 +30,10 @@ import org.prebid.mobile.rendering.networking.ResponseHandler;
 import org.prebid.mobile.rendering.networking.modelcontrollers.AsyncVastLoader;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
 import org.prebid.mobile.rendering.parser.AdResponseParserVast;
+import org.prebid.mobile.rendering.parser.BestQualityMediaFileSelector;
+import org.prebid.mobile.rendering.parser.LowQualityMediaFileSelector;
+import org.prebid.mobile.rendering.parser.MediaFileSelector;
+import org.prebid.mobile.rendering.parser.MediumQualityMediaFileSelector;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
 import org.prebid.mobile.rendering.video.vast.VASTErrorCodes;
 
@@ -95,7 +100,7 @@ public class VastParserExtractor {
         // Parse the response.
         AdResponseParserVast adResponseParserVast;
         try {
-            adResponseParserVast = new AdResponseParserVast(vast);
+            adResponseParserVast = new AdResponseParserVast(vast, getMediaFileSelector());
         } catch (VastParseError e) {
             LogUtil.error(TAG, "AdResponseParserVast creation failed: " + Log.getStackTraceString(e));
 
@@ -136,6 +141,18 @@ public class VastParserExtractor {
         else {
             final AdResponseParserBase[] parserArray = {rootVastParser, latestVastWrapperParser};
             listener.onResult(new VastExtractorResult(parserArray));
+        }
+    }
+
+    private MediaFileSelector getMediaFileSelector() {
+        switch (PrebidMobile.vastMediaSelectionStrategy) {
+            case LOW_QUALITY: {
+                return new LowQualityMediaFileSelector();
+            }
+            case MEDIUM_QUALITY:
+                return new MediumQualityMediaFileSelector();
+            default:
+                return new BestQualityMediaFileSelector();
         }
     }
 
