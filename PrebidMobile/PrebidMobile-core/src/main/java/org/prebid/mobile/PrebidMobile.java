@@ -85,7 +85,7 @@ public class PrebidMobile {
     /**
      * Strategy to select de Media File to be render {@link VastMediaSelectionStrategy}
      */
-    public static VastMediaSelectionStrategy vastMediaSelectionStrategy = VastMediaSelectionStrategy.HIGHT_QUALITY;
+    public static VastMediaSelectionStrategy vastMediaSelectionStrategy = VastMediaSelectionStrategy.HIGH_QUALITY;
 
     /**
      * Banner timeout to retrieve and load creative. Default 6 seconds
@@ -348,9 +348,10 @@ public class PrebidMobile {
     }
 
     public enum VastMediaSelectionStrategy {
-        HIGHT_QUALITY,
+        HIGH_QUALITY,
+        HIGH_LIMITED_QUALITY,
         MEDIUM_QUALITY,
-        LOW_QUALITY
+        LOW_QUALITY,
     }
 
 }

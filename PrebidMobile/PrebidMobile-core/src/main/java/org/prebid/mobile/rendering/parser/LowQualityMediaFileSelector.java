@@ -8,7 +8,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class LowQualityMediaFileSelector implements MediaFileSelector {
-    private Comparator<MediaFile> videoQualityComparator;
+    private final Comparator<MediaFile> videoQualityComparator;
 
     public LowQualityMediaFileSelector() {
         this.videoQualityComparator = new VideoQualityComparator();
@@ -19,7 +19,7 @@ public class LowQualityMediaFileSelector implements MediaFileSelector {
     }
 
     @Override
-    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles) {
+    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles, long durationMillis) {
         if (eligibleMediaFiles.size() == 0) return "";
 
         SortedSet<MediaFile> set = new TreeSet<>(videoQualityComparator);

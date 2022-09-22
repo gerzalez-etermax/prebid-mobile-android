@@ -30,7 +30,8 @@ import org.prebid.mobile.rendering.networking.ResponseHandler;
 import org.prebid.mobile.rendering.networking.modelcontrollers.AsyncVastLoader;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
 import org.prebid.mobile.rendering.parser.AdResponseParserVast;
-import org.prebid.mobile.rendering.parser.BestQualityMediaFileSelector;
+import org.prebid.mobile.rendering.parser.HighLimitedQualityMediaFileSelector;
+import org.prebid.mobile.rendering.parser.HighQualityMediaFileSelector;
 import org.prebid.mobile.rendering.parser.LowQualityMediaFileSelector;
 import org.prebid.mobile.rendering.parser.MediaFileSelector;
 import org.prebid.mobile.rendering.parser.MediumQualityMediaFileSelector;
@@ -146,13 +147,14 @@ public class VastParserExtractor {
 
     private MediaFileSelector getMediaFileSelector() {
         switch (PrebidMobile.vastMediaSelectionStrategy) {
-            case LOW_QUALITY: {
+            case LOW_QUALITY:
                 return new LowQualityMediaFileSelector();
-            }
             case MEDIUM_QUALITY:
                 return new MediumQualityMediaFileSelector();
+            case HIGH_LIMITED_QUALITY:
+                return new HighLimitedQualityMediaFileSelector();
             default:
-                return new BestQualityMediaFileSelector();
+                return new HighQualityMediaFileSelector();
         }
     }
 

@@ -20,7 +20,7 @@ import org.prebid.mobile.rendering.errors.VastParseError;
 
 public class AdResponseParserVastHelper extends AdResponseParserVast {
     public AdResponseParserVastHelper(String data) throws VastParseError {
-        super(data, new BestQualityMediaFileSelector());
+        super(data, new HighQualityMediaFileSelector());
     }
 
     public AdResponseParserVastHelper(String data, MediaFileSelector mediaFileSelector) throws VastParseError {

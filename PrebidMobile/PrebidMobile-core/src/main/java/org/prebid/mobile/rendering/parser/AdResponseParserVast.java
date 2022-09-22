@@ -248,8 +248,9 @@ public class AdResponseParserVast extends AdResponseParserBase {
                     if (eligibleMediaFiles.size() == 0) {
                         return myBestMediaFileURL;
                     }
-
-                    myBestMediaFileURL = mediaFileSelectorStrategy.getMediaUrl(eligibleMediaFiles);
+                    myBestMediaFileURL = mediaFileSelectorStrategy
+                            .getMediaUrl(eligibleMediaFiles,
+                                    Utils.getMsFrom(parserVast.getVideoDuration(parserVast, 0)));
                 }
             }
         }

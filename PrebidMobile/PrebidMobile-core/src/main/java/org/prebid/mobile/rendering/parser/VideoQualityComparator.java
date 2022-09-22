@@ -1,6 +1,8 @@
 package org.prebid.mobile.rendering.parser;
 
-import org.prebid.mobile.rendering.utils.helpers.Utils;
+import static org.prebid.mobile.rendering.utils.helpers.Utils.getIntOrOne;
+import static org.prebid.mobile.rendering.utils.helpers.Utils.getIntOrZero;
+
 import org.prebid.mobile.rendering.video.vast.MediaFile;
 
 import java.util.Comparator;
@@ -13,15 +15,9 @@ public class VideoQualityComparator implements Comparator<MediaFile> {
     }
 
     private int getQualityValue(MediaFile mediaFile) {
-        int bitRate = getIntOrOne(mediaFile.getBitrate());
+        int bitRate = getIntOrZero(mediaFile.getBitrate());
         int height = getIntOrOne(mediaFile.getHeight());
         int width = getIntOrOne(mediaFile.getWidth());
         return bitRate + (height * width);
     }
-
-    private int getIntOrOne(String stringValue) {
-        return Utils.isBlank(stringValue)
-                ? 1 : Integer.parseInt(stringValue);
-    }
-
 }
