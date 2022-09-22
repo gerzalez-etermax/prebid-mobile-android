@@ -5,9 +5,9 @@ import org.prebid.mobile.rendering.video.vast.MediaFile;
 
 import java.util.ArrayList;
 
-public class BestQualityMediaFileSelector implements MediaFileSelector {
+public class HighQualityMediaFileSelector implements MediaFileSelector {
     @Override
-    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles) {
+    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles, long durationMillis) {
         String myBestMediaFileURL;
         // choose the one with the highest resolution amongst all
         MediaFile best = eligibleMediaFiles.get(0);

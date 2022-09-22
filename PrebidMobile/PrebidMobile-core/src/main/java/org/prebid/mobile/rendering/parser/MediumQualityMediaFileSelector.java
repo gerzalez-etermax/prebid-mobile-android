@@ -9,7 +9,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class MediumQualityMediaFileSelector implements MediaFileSelector {
-    private Comparator<MediaFile> videoQualityComparator;
+    private final Comparator<MediaFile> videoQualityComparator;
 
     public MediumQualityMediaFileSelector() {
         this.videoQualityComparator = new VideoQualityComparator();
@@ -20,9 +20,8 @@ public class MediumQualityMediaFileSelector implements MediaFileSelector {
     }
 
     @Override
-    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles) {
+    public String getMediaUrl(ArrayList<MediaFile> eligibleMediaFiles, long durationMillis) {
         MediaFile myBestMediaFileURL = null;
-        // choose the one with the highest resolution amongst al
 
         SortedSet<MediaFile> set = new TreeSet<>(videoQualityComparator);
         set.addAll(eligibleMediaFiles);
