@@ -62,7 +62,7 @@ import static org.prebid.mobile.PrebidMobile.AUTO_REFRESH_DELAY_MIN;
 
 public final class Utils {
     private static final String TAG = Utils.class.getSimpleName();
-    private static final String VAST_REGEX = "<VAST\\s.*version=\".*\"(\\s.*|)?>";
+    private static final String VAST_REGEX = "<VAST[^<]+(?>version=){1}(?:'|\")\\S+(?:'|\").*?>";
 
     public static float DENSITY;
 
