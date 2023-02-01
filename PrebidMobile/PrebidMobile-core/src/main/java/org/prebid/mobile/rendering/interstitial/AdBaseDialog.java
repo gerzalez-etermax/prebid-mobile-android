@@ -99,7 +99,7 @@ public abstract class AdBaseDialog extends Dialog {
         Context context,
         InterstitialManager interstitialManager
     ) {
-        super(context, R.style.FullScreenDialogTheme);
+        super(context, R.style.FullScreenDialogThemePrebidMobile);
         contextReference = new WeakReference<>(context);
         this.interstitialManager = interstitialManager;
 
@@ -111,7 +111,7 @@ public abstract class AdBaseDialog extends Dialog {
         WebViewBase webViewBaseLocal,
         InterstitialManager interstitialManager
     ) {
-        super(context, R.style.FullScreenDialogTheme);
+        super(context, R.style.FullScreenDialogThemePrebidMobile);
 
         contextReference = new WeakReference<>(context);
         webViewBase = webViewBaseLocal;

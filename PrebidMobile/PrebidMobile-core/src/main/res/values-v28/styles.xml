@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="FullScreenDialogTheme" parent="android:Theme.Material.NoActionBar.Fullscreen">
+    <style name="FullScreenDialogThemePrebidMobile" parent="android:Theme.Material.NoActionBar.Fullscreen">
         <!-- Display in cutout mode -->
         <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
 
