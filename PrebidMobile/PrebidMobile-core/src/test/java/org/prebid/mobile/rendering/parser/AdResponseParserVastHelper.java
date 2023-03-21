@@ -17,13 +17,17 @@
 package org.prebid.mobile.rendering.parser;
 
 import org.prebid.mobile.rendering.errors.VastParseError;
+import org.prebid.mobile.rendering.video.vast.MediaFile;
+
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class AdResponseParserVastHelper extends AdResponseParserVast {
     public AdResponseParserVastHelper(String data) throws VastParseError {
-        super(data, new HighQualityMediaFileSelector());
+        super(data,new ArrayList<>());
     }
 
-    public AdResponseParserVastHelper(String data, MediaFileSelector mediaFileSelector) throws VastParseError {
-        super(data, mediaFileSelector);
+    public AdResponseParserVastHelper(String data, ArrayList<Comparator<MediaFile>> mediaFileSorter) throws VastParseError {
+        super(data, mediaFileSorter);
     }
 }

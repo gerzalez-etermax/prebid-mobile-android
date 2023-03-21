@@ -34,6 +34,7 @@ import org.prebid.mobile.rendering.video.vast.Tracking;
 import org.prebid.mobile.rendering.video.vast.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.prebid.mobile.rendering.parser.AdResponseParserVast.*;
 
@@ -122,7 +123,7 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
 
             videoModel.setName(VIDEO_CREATIVE_TAG);
 
-            videoModel.setMediaUrl(latestVastWrapperParser.getMediaFileUrl(latestVastWrapperParser, 0));
+            videoModel.setMediaUrl(getMediaUrl());
             videoModel.setMediaDuration(Utils.getMsFrom(videoDuration));
             videoModel.setSkipOffset(Utils.getMsFrom(skipOffset));
             videoModel.setAdVerifications(adVerifications);
@@ -219,6 +220,14 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
             LogUtil.error(TAG, "Video failed with: " + e.getMessage());
             notifyErrorListener("Video failed: " + e.getMessage());
         }
+    }
+
+    private String getMediaUrl() {
+        String mediaUrl = "";
+        List<String> mediaFileUrl = latestVastWrapperParser.getMediaFileUrl(latestVastWrapperParser, 0);
+        if (!mediaFileUrl.isEmpty())
+            mediaUrl = mediaFileUrl.get(0);
+        return mediaUrl;
     }
 
     private void notifyErrorListener(String msg) {

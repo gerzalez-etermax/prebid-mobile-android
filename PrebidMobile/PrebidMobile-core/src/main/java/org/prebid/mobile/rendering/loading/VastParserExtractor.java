@@ -30,13 +30,16 @@ import org.prebid.mobile.rendering.networking.ResponseHandler;
 import org.prebid.mobile.rendering.networking.modelcontrollers.AsyncVastLoader;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
 import org.prebid.mobile.rendering.parser.AdResponseParserVast;
-import org.prebid.mobile.rendering.parser.HighLimitedQualityMediaFileSelector;
-import org.prebid.mobile.rendering.parser.HighQualityMediaFileSelector;
-import org.prebid.mobile.rendering.parser.LowQualityMediaFileSelector;
-import org.prebid.mobile.rendering.parser.MediaFileSelector;
-import org.prebid.mobile.rendering.parser.MediumQualityMediaFileSelector;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoLandscapeOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoPortraitOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorAsc;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorDes;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
+import org.prebid.mobile.rendering.video.vast.MediaFile;
 import org.prebid.mobile.rendering.video.vast.VASTErrorCodes;
+
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class VastParserExtractor {
 
@@ -51,6 +54,8 @@ public class VastParserExtractor {
     private AdResponseParserVast latestVastWrapperParser;
 
     private int vastWrapperCount;
+
+    private boolean isPortrait = true;
 
     private final ResponseHandler responseHandler = new ResponseHandler() {
         @Override
@@ -84,7 +89,8 @@ public class VastParserExtractor {
         }
     }
 
-    public void extract(String vast) {
+    public void extract(String vast, boolean isPortrait) {
+        this.isPortrait = isPortrait;
         performVastUnwrap(vast);
     }
 
@@ -145,17 +151,17 @@ public class VastParserExtractor {
         }
     }
 
-    private MediaFileSelector getMediaFileSelector() {
+    private ArrayList<Comparator<MediaFile>> getMediaFileSelector() {
+        Comparator<MediaFile> orientationSorter = isPortrait ? new VideoPortraitOrientationComparator() : new VideoLandscapeOrientationComparator();
+        ArrayList<Comparator<MediaFile>> selectors = new ArrayList<>();
+        selectors.add(orientationSorter);
         switch (PrebidMobile.vastMediaSelectionStrategy) {
             case LOW_QUALITY:
-                return new LowQualityMediaFileSelector();
-            case MEDIUM_QUALITY:
-                return new MediumQualityMediaFileSelector();
+                selectors.add(new VideoQualityComparatorDes());
             case HIGH_LIMITED_QUALITY:
-                return new HighLimitedQualityMediaFileSelector();
-            default:
-                return new HighQualityMediaFileSelector();
+                selectors.add(new VideoQualityComparatorAsc());
         }
+        return selectors;
     }
 
     private void failedToLoadAd(String msg) {

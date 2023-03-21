@@ -107,7 +107,7 @@ public class CreativeModelMakerBidsTest {
         modelMakerBids.makeVideoModels(mockConfig, vast);
 
         verify(mockConfig).setAdFormat(eq(AdFormat.VAST));
-        verify(mockExtractor).extract(eq(vast));
+        verify(mockExtractor).extract(eq(vast),eq(true));
     }
 
     @Test

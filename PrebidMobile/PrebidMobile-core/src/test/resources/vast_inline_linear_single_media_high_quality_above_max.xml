@@ -65,45 +65,9 @@
                                 <![CDATA[https://aax-us-east.amazon-adsystem.com/x/px/RIvpg4F9EgtGwwPOqjJFkDwAAAGDM0UMyQEAAA-qAwBOL0EgICAgICAgICAgICBOL0EgICAgICAgICAgICBaBYv4/%7B%22c%22%3A%22video%22%2C%22clk%22%3A1%2C%22src%22%3A4010%7D]]></ClickTracking>
                         </VideoClicks>
                         <MediaFiles>
-                            <MediaFile bitrate="484" delivery="progressive" height="360" type="video/mp4"
-                                width="640">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-450kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=484&w=640&h=360&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="9915" delivery="progressive" height="1080" type="video/mp4"
-                                width="1920">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-10000kbs-29.97fps-48khz-320kbs-1080p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=9915&w=1920&h=1080&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
                             <MediaFile bitrate="16942" delivery="progressive" height="1080" type="video/mp4"
                                 width="1920">
                                 <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-20000kbs-autofps-48khz-320kbs.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=16942&w=1920&h=1080&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="4016" delivery="progressive" height="1080" type="video/mp4"
-                                width="1920">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-4000kbs-29.97fps-48khz-192kbs-1080p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=4016&w=1920&h=1080&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="2065" delivery="progressive" height="720" type="video/mp4"
-                                width="1280">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-2000kbs-29.97fps-48khz-96kbs-720p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=2065&w=1280&h=720&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="1417" delivery="progressive" height="720" type="video/mp4"
-                                width="1280">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-1350kbs-29.97fps-48khz-96kbs-720p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=1417&w=1280&h=720&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="941" delivery="progressive" height="480" type="video/mp4"
-                                width="854">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-900kbs-15fps-48khz-96kbs-480p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=941&w=854&h=480&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="941" delivery="progressive" height="854" type="video/mp4"
-                                width="480">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-900kbs-15fps-48khz-96kbs-480p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=941&w=854&h=480&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="639" delivery="progressive" height="480" type="video/mp4"
-                                width="854">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-600kbs-15fps-48khz-96kbs-480p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=639&w=854&h=480&ct=1014,&ca=3,5,]]>
-                            </MediaFile>
-                            <MediaFile bitrate="329" delivery="progressive" height="360" type="video/mp4"
-                                width="640">
-                                <![CDATA[https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,]]>
                             </MediaFile>
                         </MediaFiles>
                     </Linear>

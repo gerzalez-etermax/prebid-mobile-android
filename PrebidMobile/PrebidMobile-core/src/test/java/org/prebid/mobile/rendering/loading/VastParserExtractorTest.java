@@ -64,7 +64,7 @@ public class VastParserExtractorTest {
     public void whenFirstExtract_AssignRootParserAndMakeRequest()
     throws IllegalAccessException, IOException {
         String responseString = ResourceUtils.convertResourceToString("vast_wrapper_linear_nonlinear.xml");
-        vastParserExtractor.extract(responseString);
+        vastParserExtractor.extract(responseString, true);
         assertNotNull(WhiteBox.field(VastParserExtractor.class, "rootVastParser").get(vastParserExtractor));
         verify(mockAsyncVastLoader).loadVast(anyString(), any());
     }
@@ -75,14 +75,14 @@ public class VastParserExtractorTest {
         AdResponseParserVast mockParser = mock(AdResponseParserVast.class);
         WhiteBox.field(VastParserExtractor.class, "rootVastParser").set(vastParserExtractor, mockResponseParserVast);
         WhiteBox.field(VastParserExtractor.class, "latestVastWrapperParser").set(vastParserExtractor, mockParser);
-        vastParserExtractor.extract(defaultResponseString);
+        vastParserExtractor.extract(defaultResponseString, true);
         verify(mockParser).setWrapper(any(AdResponseParserVast.class));
     }
 
     @Test
     public void extractAndVastUrlIsEmpty_NotifyListener() {
         when(mockResponseParserVast.getVastUrl()).thenReturn("");
-        vastParserExtractor.extract(defaultResponseString);
+        vastParserExtractor.extract(defaultResponseString, true);
         verify(mockListener).onResult(any(VastExtractorResult.class));
     }
 
@@ -93,7 +93,7 @@ public class VastParserExtractorTest {
         WhiteBox.field(VastParserExtractor.class, "vastWrapperCount").set(vastParserExtractor, 5);
         final AdException exception = new AdException(INTERNAL_ERROR, WRAPPER_LIMIT_REACH_ERROR.toString());
 
-        vastParserExtractor.extract(responseString);
+        vastParserExtractor.extract(responseString, true);
 
         ArgumentCaptor<VastExtractorResult> argument = ArgumentCaptor.forClass(VastExtractorResult.class);
 

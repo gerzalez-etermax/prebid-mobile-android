@@ -24,6 +24,7 @@ import org.prebid.mobile.api.exceptions.AdException;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.rendering.bidding.data.bid.Bid;
 import org.prebid.mobile.rendering.bidding.data.bid.BidResponse;
+import org.prebid.mobile.rendering.interstitial.InterstitialSizes;
 import org.prebid.mobile.rendering.loading.AdLoadListener;
 import org.prebid.mobile.rendering.loading.VastParserExtractor;
 import org.prebid.mobile.rendering.models.internal.VastExtractorResult;
@@ -77,7 +78,8 @@ public class CreativeModelMakerBids {
     public void makeVideoModels(AdUnitConfiguration adConfiguration, String vast) {
         this.adConfiguration = adConfiguration;
         this.adConfiguration.setAdFormat(AdFormat.VAST);
-        parserExtractor.extract(vast);
+        String size = adConfiguration.getInterstitialSize();
+        parserExtractor.extract(vast, TextUtils.isEmpty(size) || InterstitialSizes.isPortrait(size));
     }
 
     public void cancel() {
