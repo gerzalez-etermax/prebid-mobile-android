@@ -41,16 +41,17 @@ public class UserConsentParameterBuilder extends ParameterBuilder {
         appendGdprParameter(bidRequest);
         appendCcpaParameter(bidRequest);
         appendCoppaParameter(bidRequest);
+        appendGppParameter(bidRequest);
     }
 
     private void appendGdprParameter(BidRequest bidRequest) {
-        Boolean subjectToGdpr = userConsentManager.getAnySubjectToGdpr();
+        Boolean subjectToGdpr = userConsentManager.getSubjectToGdpr();
 
         if (subjectToGdpr != null) {
             int gdprValue = subjectToGdpr ? 1 : 0;
             bidRequest.getRegs().getExt().put(GDPR, gdprValue);
 
-            String userConsentString = userConsentManager.getAnyGdprConsent();
+            String userConsentString = userConsentManager.getGdprConsent();
             if (!Utils.isBlank(userConsentString)) {
                 bidRequest.getUser().getExt().put(CONSENT, userConsentString);
             }
@@ -69,6 +70,18 @@ public class UserConsentParameterBuilder extends ParameterBuilder {
         Boolean subjectToCoppa = userConsentManager.getSubjectToCoppa();
         if (subjectToCoppa != null) {
             bidRequest.getRegs().getExt().put(COPPA_SUBJECT, subjectToCoppa ? 1 : 0);
+        }
+    }
+
+    private void appendGppParameter(BidRequest bidRequest) {
+        String gppString = userConsentManager.getRealGppString();
+        if (gppString != null) {
+            bidRequest.getRegs().setGppString(gppString);
+        }
+
+        String gppSid = userConsentManager.getRealGppSid();
+        if (gppSid != null) {
+            bidRequest.getRegs().setGppSid(gppSid);
         }
     }
 

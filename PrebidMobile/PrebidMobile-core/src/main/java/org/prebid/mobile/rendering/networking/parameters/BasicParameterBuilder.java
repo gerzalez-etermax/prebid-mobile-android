@@ -16,12 +16,23 @@
 
 package org.prebid.mobile.rendering.networking.parameters;
 
+import static org.prebid.mobile.PrebidMobile.SDK_VERSION;
+
 import android.content.res.Configuration;
 import android.content.res.Resources;
+import android.text.TextUtils;
 import android.util.Pair;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.prebid.mobile.*;
+import org.prebid.mobile.AdSize;
+import org.prebid.mobile.BannerBaseAdUnit;
+import org.prebid.mobile.DataObject;
+import org.prebid.mobile.ExternalUserId;
+import org.prebid.mobile.PrebidMobile;
+import org.prebid.mobile.Signals;
+import org.prebid.mobile.TargetingParams;
+import org.prebid.mobile.VideoBaseAdUnit;
 import org.prebid.mobile.api.data.AdFormat;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.rendering.bidding.data.bid.Prebid;
@@ -36,9 +47,13 @@ import org.prebid.mobile.rendering.models.openrtb.bidRequests.source.Source;
 import org.prebid.mobile.rendering.session.manager.OmAdSessionManager;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
 
-import java.util.*;
-
-import static org.prebid.mobile.PrebidMobile.SDK_VERSION;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class BasicParameterBuilder extends ParameterBuilder {
 
@@ -132,21 +147,23 @@ public class BasicParameterBuilder extends ParameterBuilder {
     }
 
     private void configureSource(Source source, String uuid) {
-        String userDefinedPartnerName = TargetingParams.getOmidPartnerName();
-        String userDefinedPartnerVersion = TargetingParams.getOmidPartnerVersion();
-        String usedPartnerName = OmAdSessionManager.PARTNER_NAME;
-        String usedPartnerVersion = OmAdSessionManager.PARTNER_VERSION;
-
-        if (userDefinedPartnerName != null && !userDefinedPartnerName.isEmpty()) {
-            usedPartnerName = userDefinedPartnerName;
-        }
-        if (userDefinedPartnerVersion != null && !userDefinedPartnerVersion.isEmpty()) {
-            usedPartnerVersion = userDefinedPartnerVersion;
-        }
-
         source.setTid(uuid);
-        source.getExt().put(KEY_OM_PARTNER_NAME, usedPartnerName);
-        source.getExt().put(KEY_OM_PARTNER_VERSION, usedPartnerVersion);
+
+        boolean isNotOriginalApi = !adConfiguration.isOriginalAdUnit();
+
+        String userDefinedPartnerName = TargetingParams.getOmidPartnerName();
+        if (userDefinedPartnerName != null && !userDefinedPartnerName.isEmpty()) {
+            source.getExt().put(KEY_OM_PARTNER_NAME, userDefinedPartnerName);
+        } else if (isNotOriginalApi) {
+            source.getExt().put(KEY_OM_PARTNER_NAME, OmAdSessionManager.PARTNER_NAME);
+        }
+
+        String userDefinedPartnerVersion = TargetingParams.getOmidPartnerVersion();
+        if (userDefinedPartnerVersion != null && !userDefinedPartnerVersion.isEmpty()) {
+            source.getExt().put(KEY_OM_PARTNER_VERSION, userDefinedPartnerVersion);
+        } else if (isNotOriginalApi) {
+            source.getExt().put(KEY_OM_PARTNER_VERSION, OmAdSessionManager.PARTNER_VERSION);
+        }
     }
 
     private void appendUserTargetingParameters(AdRequestInput adRequestInput) {
@@ -200,7 +217,6 @@ public class BasicParameterBuilder extends ParameterBuilder {
 
     private void setVideoImpValues(Imp imp) {
         Video video = new Video();
-
         if (adConfiguration.isOriginalAdUnit()) {
             VideoBaseAdUnit.Parameters videoParameters = adConfiguration.getVideoParameters();
             if (videoParameters != null) {
@@ -209,6 +225,12 @@ public class BasicParameterBuilder extends ParameterBuilder {
 
                 video.minbitrate = videoParameters.getMinBitrate();
                 video.maxbitrate = videoParameters.getMaxBitrate();
+                video.linearity = videoParameters.getLinearity();
+                if (videoParameters.getPlacement() != null) {
+                    video.placement = videoParameters.getPlacement().getValue();
+                } else if (adConfiguration.isPlacementTypeValid()){
+                    video.placement = adConfiguration.getPlacementTypeValue();
+                }
 
                 if (videoParameters.getStartDelay() != null) {
                     video.startDelay = videoParameters.getStartDelay().getValue();
@@ -246,7 +268,6 @@ public class BasicParameterBuilder extends ParameterBuilder {
                     video.mimes = mimesArray;
                 }
 
-
                 List<Signals.Protocols> protocolsObjects = videoParameters.getProtocols();
                 if (protocolsObjects != null && protocolsObjects.size() > 0) {
                     int size = protocolsObjects.size();
@@ -257,6 +278,9 @@ public class BasicParameterBuilder extends ParameterBuilder {
                     video.protocols = protocolsArray;
                 }
             }
+            if (video.placement == null && adConfiguration.isPlacementTypeValid()) {
+                video.placement = adConfiguration.getPlacementTypeValue();
+            }
         } else {
             //Common values for all video reqs
             video.mimes = SUPPORTED_VIDEO_MIME_TYPES;
@@ -265,28 +289,31 @@ public class BasicParameterBuilder extends ParameterBuilder {
 
             //Interstitial video specific values
             video.playbackend = VIDEO_INTERSTITIAL_PLAYBACK_END;//On Leaving Viewport or when Terminated by User
-            video.delivery = new int[]{VIDEO_DELIVERY_DOWNLOAD};
 
             if (adConfiguration.isAdPositionValid()) {
                 video.pos = adConfiguration.getAdPositionValue();
             }
+
+            if (!adConfiguration.isPlacementTypeValid()) {
+                video.placement = PlacementType.INTERSTITIAL.getValue();
+            } else {
+                video.placement = adConfiguration.getPlacementTypeValue();
+            }
         }
 
-        if (!adConfiguration.isPlacementTypeValid()) {
-            video.placement = PlacementType.INTERSTITIAL.getValue();
-            if (resources != null) {
-                Configuration deviceConfiguration = resources.getConfiguration();
-                video.w = deviceConfiguration.screenWidthDp;
-                video.h = deviceConfiguration.screenHeightDp;
-            }
-        } else {
-            video.placement = adConfiguration.getPlacementTypeValue();
+        HashSet<AdSize> adSizes = adConfiguration.getSizes();
+        if (!adSizes.isEmpty()) {
             for (AdSize size : adConfiguration.getSizes()) {
                 video.w = size.getWidth();
                 video.h = size.getHeight();
                 break;
             }
+        } else if (resources != null) {
+            Configuration deviceConfiguration = resources.getConfiguration();
+            video.w = deviceConfiguration.screenWidthDp;
+            video.h = deviceConfiguration.screenHeightDp;
         }
+        video.delivery = new int[]{VIDEO_DELIVERY_DOWNLOAD};
 
         imp.video = video;
     }
@@ -342,14 +369,17 @@ public class BasicParameterBuilder extends ParameterBuilder {
         }
         imp.getExt().put("prebid", Prebid.getJsonObjectForImp(adConfiguration));
 
-        final Map<String, Set<String>> contextDataDictionary = adConfiguration.getContextDataDictionary();
-        JSONObject data = Utils.toJson(contextDataDictionary);
+        final Map<String, Set<String>> extDataDictionary = adConfiguration.getExtDataDictionary();
+        JSONObject data = Utils.toJson(extDataDictionary);
         Utils.addValue(data, "adslot", adConfiguration.getPbAdSlot());
-        JSONObject context = new JSONObject();
-
         if (data.length() > 0) {
-            Utils.addValue(context, "data", data);
-            imp.getExt().put("context", context);
+            imp.getExt().put("data", data);
+        }
+
+        final Set<String> extKeywords = adConfiguration.getExtKeywordsSet();
+        if (extKeywords.size() > 0) {
+            String string = TextUtils.join(",", extKeywords);
+            imp.getExt().put("keywords", string);
         }
 
         // TODO: 15.12.2020 uncomment when Prebid server will be able to process Ext content not related to bidders
@@ -357,8 +387,8 @@ public class BasicParameterBuilder extends ParameterBuilder {
     }
 
     private void setDisplayManager(Imp imp) {
-        imp.displaymanager = DISPLAY_MANAGER_VALUE;
-        imp.displaymanagerver = SDK_VERSION;
+        imp.displaymanager = adConfiguration.isOriginalAdUnit() ? null : DISPLAY_MANAGER_VALUE;
+        imp.displaymanagerver = adConfiguration.isOriginalAdUnit() ? null : SDK_VERSION;
     }
 
     private int[] getApiFrameworks() {

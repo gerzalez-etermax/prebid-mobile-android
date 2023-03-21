@@ -19,14 +19,21 @@ package org.prebid.mobile;
 import android.content.Context;
 import android.text.TextUtils;
 import android.util.Pair;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
 import org.json.JSONArray;
 import org.prebid.mobile.rendering.listeners.SdkInitializationListener;
 import org.prebid.mobile.rendering.models.openrtb.bidRequests.Ext;
 import org.prebid.mobile.rendering.sdk.UserConsentUtils;
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * TargetingParams class sets the Targeting parameters like yob, gender, location
@@ -58,8 +65,8 @@ public class TargetingParams {
     private static final Map<String, Set<String>> userDataMap = new HashMap<>();
     private static final Set<String> accessControlList = new HashSet<>();
     private static final Set<String> userKeywordsSet = new HashSet<>();
-    private static final Map<String, Set<String>> contextDataDictionary = new HashMap<>();
-    private static final Set<String> contextKeywordsSet = new HashSet<>();
+    private static final Map<String, Set<String>> extDataDictionary = new HashMap<>();
+    private static final Set<String> extKeywordsSet = new HashSet<>();
 
     private TargetingParams() {
     }
@@ -441,45 +448,150 @@ public class TargetingParams {
         TargetingParams.bundleName = bundleName;
     }
 
+
+    /**
+     * This method obtains the context data keyword & value context for global context targeting
+     * if the key already exists the value will be appended to the list. No duplicates will be added
+     * (app.ext.data)
+     *
+     * @deprecated use addExtData
+     */
+    @Deprecated
+    public static void addContextData(
+        String key,
+        String value
+    ) {
+        Util.addValue(extDataDictionary, key, value);
+    }
+
+    /**
+     * This method obtains the context data keyword & values set for global context targeting.
+     * the values if the key already exist will be replaced with the new set of values
+     * @deprecated use updateExtData
+     */
+    @Deprecated
+    public static void updateContextData(
+        String key,
+        Set<String> value
+    ) {
+        extDataDictionary.put(key, value);
+    }
+
+    /**
+     * This method allows to remove specific context data keyword & values set from global context targeting
+     * @deprecated use removeExtData
+     */
+    @Deprecated
+    public static void removeContextData(String key) {
+        extDataDictionary.remove(key);
+    }
+
+    /**
+     * This method allows to remove all context data set from global context targeting
+     *
+     * @deprecated use clearExtData
+     */
+    @Deprecated
+    public static void clearContextData() {
+        extDataDictionary.clear();
+    }
+
+    /**
+     * @deprecated use getExtDataDictionary
+     */
+    @Deprecated
+    public static Map<String, Set<String>> getContextDataDictionary() {
+        return extDataDictionary;
+    }
+
+    /**
+     * This method obtains the context keyword for adunit context targeting
+     * Inserts the given element in the set if it is not already present.
+     * (imp[].ext.context.keywords)
+     * @deprecated use addExtKeyword
+     */
+    @Deprecated
+    public static void addContextKeyword(String keyword) {
+        extKeywordsSet.add(keyword);
+    }
+
+    /**
+     * This method obtains the context keyword set for adunit context targeting
+     * Adds the elements of the given set to the set.
+     * @deprecated use addExtKeywords
+     */
+    @Deprecated
+    public static void addContextKeywords(Set<String> keywords) {
+        extKeywordsSet.addAll(keywords);
+    }
+
+    /**
+     * This method allows to remove specific context keyword from adunit context targeting
+     * @deprecated use removeExtKeyword
+     */
+    @Deprecated
+    public static void removeContextKeyword(String keyword) {
+        extKeywordsSet.remove(keyword);
+    }
+
+    /**
+     * This method allows to remove all keywords from the set of adunit context targeting
+     *
+     * @deprecated use clearExtKeywords
+     */
+    @Deprecated
+    public static void clearContextKeywords() {
+        extKeywordsSet.clear();
+    }
+
+    /**
+     * @deprecated use getExtKeywordsSet
+     */
+    @Deprecated
+    public static Set<String> getContextKeywordsSet() {
+        return extKeywordsSet;
+    }
+
+
     /**
      * This method obtains the context data keyword & value context for global context targeting
      * if the key already exists the value will be appended to the list. No duplicates will be added
      * (app.ext.data)
      */
-    public static void addContextData(
+    public static void addExtData(
         String key,
         String value
     ) {
-        Util.addValue(contextDataDictionary, key, value);
+        Util.addValue(extDataDictionary, key, value);
     }
 
     /**
      * This method obtains the context data keyword & values set for global context targeting.
      * the values if the key already exist will be replaced with the new set of values
      */
-    public static void updateContextData(
+    public static void updateExtData(
         String key,
         Set<String> value
     ) {
-        contextDataDictionary.put(key, value);
+        extDataDictionary.put(key, value);
     }
 
     /**
      * This method allows to remove specific context data keyword & values set from global context targeting
      */
-    public static void removeContextData(String key) {
-        contextDataDictionary.remove(key);
+    public static void removeExtData(String key) {
+        extDataDictionary.remove(key);
     }
 
     /**
      * This method allows to remove all context data set from global context targeting
      */
-    public static void clearContextData() {
-        contextDataDictionary.clear();
+    public static void clearExtData() {
+        extDataDictionary.clear();
     }
 
-    public static Map<String, Set<String>> getContextDataDictionary() {
-        return contextDataDictionary;
+    public static Map<String, Set<String>> getExtDataDictionary() {
+        return extDataDictionary;
     }
 
     /**
@@ -487,34 +599,34 @@ public class TargetingParams {
      * Inserts the given element in the set if it is not already present.
      * (imp[].ext.context.keywords)
      */
-    public static void addContextKeyword(String keyword) {
-        contextKeywordsSet.add(keyword);
+    public static void addExtKeyword(String keyword) {
+        extKeywordsSet.add(keyword);
     }
 
     /**
      * This method obtains the context keyword set for adunit context targeting
      * Adds the elements of the given set to the set.
      */
-    public static void addContextKeywords(Set<String> keywords) {
-        contextKeywordsSet.addAll(keywords);
+    public static void addExtKeywords(Set<String> keywords) {
+        extKeywordsSet.addAll(keywords);
     }
 
     /**
      * This method allows to remove specific context keyword from adunit context targeting
      */
-    public static void removeContextKeyword(String keyword) {
-        contextKeywordsSet.remove(keyword);
+    public static void removeExtKeyword(String keyword) {
+        extKeywordsSet.remove(keyword);
     }
 
     /**
      * This method allows to remove all keywords from the set of adunit context targeting
      */
-    public static void clearContextKeywords() {
-        contextKeywordsSet.clear();
+    public static void clearExtKeywords() {
+        extKeywordsSet.clear();
     }
 
-    public static Set<String> getContextKeywordsSet() {
-        return contextKeywordsSet;
+    public static Set<String> getExtKeywordsSet() {
+        return extKeywordsSet;
     }
 
 
@@ -590,7 +702,7 @@ public class TargetingParams {
     }
 
     /**
-     * Sets subject to GDPR for Prebid. It uses custom key "Prebid_GDPR", not IAB. <br><br>
+     * Sets subject to GDPR for Prebid. It uses custom static field, not IAB. <br><br>
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
@@ -601,20 +713,18 @@ public class TargetingParams {
     /**
      * Gets any given subject to GDPR in that order. <br>
      * 1) Prebid subject to GDPR custom value, if present. <br>
-     * 2) IAB subject to GDPR TCF 2.0, if CMP SDK id value bigger
-     * or equals 0 and value present. <br>
-     * 3) IAB subject to GDPR TCF 1.0, if present. <br>
+     * 2) IAB subject to GDPR TCF 2.0. <br>
      * Otherwise, null. <br><br>
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
     @Nullable
     public static Boolean isSubjectToGDPR() {
-        return UserConsentUtils.tryToGetAnySubjectToGdpr();
+        return UserConsentUtils.tryToGetSubjectToGdpr();
     }
 
     /**
-     * Sets GDPR consent for Prebid. It uses custom key "Prebid_GDPR_consent_strings", not IAB. <br><br>
+     * Sets GDPR consent for Prebid. It uses custom static field, not IAB. <br><br>
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
@@ -625,20 +735,18 @@ public class TargetingParams {
     /**
      * Gets any given GDPR consent in that order. <br>
      * 1) Prebid GDPR consent custom value, if present. <br>
-     * 2) IAB GDPR consent TCF 2.0, if CMP SDK id value bigger
-     * or equals 0 and value present. <br>
-     * 3) IAB GDPR consent TCF 1.0, if present. <br>
+     * 2) IAB GDPR consent TCF 2.0. <br>
      * Otherwise, null. <br><br>
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
     @Nullable
     public static String getGDPRConsentString() {
-        return UserConsentUtils.tryToGetAnyGdprConsent();
+        return UserConsentUtils.tryToGetGdprConsent();
     }
 
     /**
-     * Sets Prebid custom GDPR purpose consent (device access consent). <br><br>
+     * Sets Prebid custom GDPR purpose consents (device access consent). <br><br>
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
@@ -656,7 +764,7 @@ public class TargetingParams {
      */
     @Nullable
     public static Boolean getPurposeConsent(int index) {
-        return UserConsentUtils.tryToGetAnyGdprPurposeConsent(index);
+        return UserConsentUtils.tryToGetGdprPurposeConsent(index);
     }
 
     /**
@@ -669,19 +777,19 @@ public class TargetingParams {
      */
     @Nullable
     public static String getPurposeConsents() {
-        return UserConsentUtils.tryToGetAnyGdprPurposeConsents();
+        return UserConsentUtils.tryToGetGdprPurposeConsents();
     }
 
     /**
      * Gets the device access consent set by the publisher.<br><br>
      * If custom Prebid subject and purpose consent set, gets device access from them.
-     * Otherwise from IAB standard.
+     * Otherwise, from IAB standard.
      * <p>
      * Must be called only after {@link PrebidMobile#initializeSdk(Context, SdkInitializationListener)}.
      */
     @Nullable
     public static Boolean getDeviceAccessConsent() {
-        return UserConsentUtils.tryToGetAnyDeviceAccessConsent();
+        return UserConsentUtils.tryToGetDeviceAccessConsent();
     }
 
 

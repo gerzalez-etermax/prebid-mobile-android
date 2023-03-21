@@ -28,13 +28,13 @@ import android.widget.FrameLayout
 import android.widget.ProgressBar
 import androidx.preference.PreferenceManager
 import androidx.test.espresso.idling.CountingIdlingResource
-import kotlinx.android.synthetic.main.events_bids.*
 import org.prebid.mobile.*
 import org.prebid.mobile.api.mediation.MediationNativeAdUnit
 import org.prebid.mobile.renderingtestapp.plugplay.config.*
 import org.prebid.mobile.renderingtestapp.utils.BaseFragment
 import org.prebid.mobile.renderingtestapp.utils.ConfigurationViewSettings
 import org.prebid.mobile.renderingtestapp.utils.OpenRtbConfigs
+import org.prebid.mobile.renderingtestapp.widgets.EventCounterView
 
 abstract class AdFragment : BaseFragment() {
 
@@ -94,11 +94,11 @@ abstract class AdFragment : BaseFragment() {
     }
 
     protected fun resetEventButtons() {
-        btnAdFailed?.isEnabled = false
-        btnAdLoaded?.isEnabled = false
-        btnAdClicked?.isEnabled = false
-        btnAdDisplayed?.isEnabled = false
-        btnAdClosed?.isEnabled = false
+        baseBinding.root.findViewById<EventCounterView>(R.id.btnAdFailed)?.isEnabled = false
+        baseBinding.root.findViewById<EventCounterView>(R.id.btnAdLoaded)?.isEnabled = false
+        baseBinding.root.findViewById<EventCounterView>(R.id.btnAdClicked)?.isEnabled = false
+        baseBinding.root.findViewById<EventCounterView>(R.id.btnAdDisplayed)?.isEnabled = false
+        baseBinding.root.findViewById<EventCounterView>(R.id.btnAdClosed)?.isEnabled = false
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -122,11 +122,11 @@ abstract class AdFragment : BaseFragment() {
         nativeAdUnit.setPlacementType(NativeAdUnit.PLACEMENTTYPE.CONTENT_FEED)
         nativeAdUnit.setContextSubType(NativeAdUnit.CONTEXTSUBTYPE.GENERAL_SOCIAL)
 
-        val methods: ArrayList<org.prebid.mobile.NativeEventTracker.EVENT_TRACKING_METHOD> = ArrayList()
-        methods.add(org.prebid.mobile.NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE)
-        methods.add(org.prebid.mobile.NativeEventTracker.EVENT_TRACKING_METHOD.JS)
+        val methods: ArrayList<NativeEventTracker.EVENT_TRACKING_METHOD> = ArrayList()
+        methods.add(NativeEventTracker.EVENT_TRACKING_METHOD.IMAGE)
+        methods.add(NativeEventTracker.EVENT_TRACKING_METHOD.JS)
         try {
-            val tracker = NativeEventTracker(org.prebid.mobile.NativeEventTracker.EVENT_TYPE.IMPRESSION, methods)
+            val tracker = NativeEventTracker(NativeEventTracker.EVENT_TYPE.IMPRESSION, methods)
             nativeAdUnit.addEventTracker(tracker)
         } catch (e: Exception) {
             e.printStackTrace()
@@ -166,7 +166,7 @@ abstract class AdFragment : BaseFragment() {
 
     private fun startAd() {
         adView = initAd()
-        setImpContextData()
+        setImpExtData()
         loadAd()
     }
 
@@ -214,8 +214,7 @@ abstract class AdFragment : BaseFragment() {
     private fun setNoBidsAccountId(enable: Boolean) {
         if (enable) {
             PrebidMobile.setPrebidServerAccountId(getString(R.string.prebid_account_id_prod_no_bids))
-        }
-        else {
+        } else {
             PrebidMobile.setPrebidServerAccountId(getString(R.string.prebid_account_id_prod))
         }
     }
@@ -223,8 +222,8 @@ abstract class AdFragment : BaseFragment() {
     private fun isNoBids(): Boolean = configId == getString(R.string.prebid_config_id_no_bids)
 
 
-    private fun setImpContextData() {
-        OpenRtbConfigs.setImpContextDataTo(adView)
+    private fun setImpExtData() {
+        OpenRtbConfigs.setImpExtDataTo(adView)
     }
 
     protected fun configureOriginalPrebid() {

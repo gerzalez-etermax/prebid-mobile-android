@@ -1,6 +1,8 @@
 package com.applovin.mediation.adapters;
 
 import android.app.Activity;
+import android.os.Handler;
+import android.os.Looper;
 
 import com.applovin.mediation.MaxAdFormat;
 import com.applovin.mediation.adapter.MaxAdViewAdapter;
@@ -20,8 +22,6 @@ import com.applovin.sdk.AppLovinSdk;
 
 import org.prebid.mobile.PrebidMobile;
 import org.prebid.mobile.TargetingParams;
-import org.prebid.mobile.api.exceptions.InitError;
-import org.prebid.mobile.rendering.listeners.SdkInitializationListener;
 
 public class PrebidMaxMediationAdapter extends MediationAdapterBase implements MaxAdViewAdapter, MaxInterstitialAdapter, MaxRewardedAdapter, MaxNativeAdAdapter {
 
@@ -47,16 +47,25 @@ public class PrebidMaxMediationAdapter extends MediationAdapterBase implements M
         if (PrebidMobile.isSdkInitialized()) {
             onCompletionListener.onCompletion(InitializationStatus.INITIALIZED_SUCCESS, null);
         } else {
-            onCompletionListener.onCompletion(InitializationStatus.INITIALIZING, null);
-            PrebidMobile.initializeSdk(activity.getApplicationContext(), new SdkInitializationListener() {
-                @Override
-                public void onSdkInit() {
-                    onCompletionListener.onCompletion(InitializationStatus.INITIALIZED_SUCCESS, null);
+            Handler handler = new Handler(Looper.getMainLooper());
+            Runnable runnable = () -> {
+                if (activity == null) {
+                    return;
                 }
 
-                @Override
-                public void onSdkFailedToInit(InitError error) {}
-            });
+                PrebidMobile.initializeSdk(activity.getApplicationContext(), status -> {
+                    if (onCompletionListener != null) {
+                        if (status != org.prebid.mobile.api.data.InitializationStatus.FAILED) {
+                            onCompletionListener.onCompletion(InitializationStatus.INITIALIZED_SUCCESS, null);
+                        } else {
+                            onCompletionListener.onCompletion(InitializationStatus.INITIALIZED_FAILURE, status.getDescription());
+                        }
+                    }
+                });
+            };
+            handler.post(runnable);
+
+            onCompletionListener.onCompletion(InitializationStatus.INITIALIZING, null);
         }
     }
 
@@ -140,7 +149,7 @@ public class PrebidMaxMediationAdapter extends MediationAdapterBase implements M
 
     @Override
     public String getAdapterVersion() {
-        return "1.15.0-beta1";
+        return PrebidMobile.SDK_VERSION;
     }
 
     @Override

@@ -24,7 +24,6 @@ import android.webkit.WebView
 import androidx.multidex.MultiDex
 import androidx.multidex.MultiDexApplication
 import com.applovin.sdk.AppLovinSdk
-import com.applovin.sdk.AppLovinSdkConfiguration
 import org.prebid.mobile.Host
 import org.prebid.mobile.PrebidMobile
 import org.prebid.mobile.renderingtestapp.utils.DemoItemProvider
@@ -52,7 +51,6 @@ class InternalTestApplication : MultiDexApplication() {
         // Setup mock responses only in mock build
 
         DemoItemProvider.init(this)
-
         // Only uncomment while testing memory leaks
         checkKeepConsentSettingsFlag()
         WebView.setWebContentsDebuggingEnabled(true)
@@ -62,7 +60,7 @@ class InternalTestApplication : MultiDexApplication() {
 
     private fun initApplovinMax() {
         AppLovinSdk.getInstance(this).mediationProvider = "max"
-        AppLovinSdk.getInstance(this).initializeSdk { configuration: AppLovinSdkConfiguration -> }
+        AppLovinSdk.getInstance(this).initializeSdk { }
         AppLovinSdk.getInstance(this).settings.setVerboseLogging(false);
     }
 

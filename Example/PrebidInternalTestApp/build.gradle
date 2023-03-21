@@ -16,20 +16,29 @@
 
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-apply plugin: 'kotlin-android-extensions'
 apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 30
-
+    setCompileSdkVersion(32)
+    setBuildToolsVersion("30.0.3")
+    defaultConfig {
+        minSdkVersion 19
+        targetSdkVersion 32
+        versionCode 1
+        versionName "1.0.0"
+        applicationId "org.prebid.mobile.renderingtestapp"
+        vectorDrawables.useSupportLibrary = true
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
         exclude 'META-INF/NOTICE'
         exclude 'META-INF/INDEX.LIST'
         exclude 'META-INF/LICENSE'
+        exclude 'META-INF/annotation-experimental_release.kotlin_module'
         exclude 'LICENSE.txt'
     }
-
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -39,34 +48,6 @@ android {
     }
     adbOptions {
         timeOutInMs 5 * 60 * 1000 // 5 minutes
-    }
-
-    defaultConfig {
-        applicationId "org.prebid.mobile.renderingtestapp"
-        minSdkVersion 19
-        targetSdkVersion 30
-        versionCode 1558441678
-        versionName "1.0"
-        vectorDrawables.useSupportLibrary = true
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-        multiDexEnabled true
-    }
-
-    dexOptions {
-        preDexLibraries = false
-    }
-
-    buildTypes {
-        debug {
-            minifyEnabled false
-        }
-    }
-
-    flavorDimensions "version"
-    productFlavors {
-        prod {
-
-        }
     }
     testOptions {
         animationsDisabled = true
@@ -86,10 +67,10 @@ dependencies {
     implementation project(':PrebidMobile-maxAdapters')
 
     // For testing staging releases
-//    implementation "org.prebid:prebid-mobile-sdk:$prebidVersionName"
-//    implementation "org.prebid:prebid-mobile-sdk-gam-event-handlers:$prebidVersionName"
-//    implementation "org.prebid:prebid-mobile-sdk-admob-adapters:$prebidVersionName"
-//    implementation "org.prebid:prebid-mobile-sdk-max-adapters:$prebidVersionName"
+//    implementation "org.prebid:prebid-mobile-sdk:$prebidSdkVersionName"
+//    implementation "org.prebid:prebid-mobile-sdk-gam-event-handlers:$prebidSdkVersionName"
+//    implementation "org.prebid:prebid-mobile-sdk-admob-adapters:$prebidSdkVersionName"
+//    implementation "org.prebid:prebid-mobile-sdk-max-adapters:$prebidSdkVersionName"
 
     // Base dependencies
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
@@ -99,10 +80,11 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-extensions:$lifecycle_version"
     implementation 'androidx.preference:preference-ktx:1.1.1'
     implementation 'androidx.vectordrawable:vectordrawable-animated:1.1.0'
+    implementation 'androidx.lifecycle:lifecycle-viewmodel-ktx:2.5.1'
 
     // Ad dependencies
-    implementation 'com.google.android.gms:play-services-base:17.6.0'
-    implementation 'com.google.android.gms:play-services-ads:20.4.0'
+    implementation 'com.google.android.gms:play-services-base:18.1.0'
+    implementation 'com.google.android.gms:play-services-ads:+'
     implementation "com.applovin:applovin-sdk:11.3.2"
     implementation "com.google.android.gms:play-services-ads-identifier:18.0.1" // For Applovin Max
 
@@ -132,4 +114,10 @@ dependencies {
     androidTestImplementation 'androidx.test.espresso:espresso-web:3.4.0'
     androidTestImplementation 'androidx.annotation:annotation:1.1.0'
     androidTestImplementation 'androidx.test.uiautomator:uiautomator:2.2.0'
+
+    // Video player
+    implementation 'com.google.android.exoplayer:exoplayer:2.15.1'
+    implementation 'com.google.android.exoplayer:exoplayer-core:2.15.1'
+    implementation 'com.google.android.exoplayer:exoplayer-ui:2.15.1'
+    implementation 'com.google.android.exoplayer:extension-ima:2.15.1'
 }

@@ -2,52 +2,48 @@ package org.prebid.mobile.prebidkotlindemo.ui
 
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SdkSuppress
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.*
-import junit.framework.AssertionFailedError
 import org.hamcrest.CoreMatchers.notNullValue
-import org.junit.After
 import org.junit.Assert.assertThat
 import org.junit.Before
+import org.junit.Rule
 import org.junit.runner.RunWith
-import androidx.test.uiautomator.UiSelector
-
-import androidx.test.uiautomator.UiObject
-
-
+import org.prebid.mobile.prebidkotlindemo.testcases.TestCase
+import org.prebid.mobile.prebidkotlindemo.testcases.TestCaseRepository
+import org.prebid.mobile.prebidkotlindemo.utils.RetryRule
 
 
 @RunWith(AndroidJUnit4::class)
 @SdkSuppress(minSdkVersion = 18)
 abstract class BaseAdsTest {
     protected val packageName = "org.prebid.mobile.prebidkotlindemo"
-    protected val timeout = 7000L
+    protected val timeout = 8000L
     protected lateinit var device: UiDevice
+    private lateinit var context: Context
 
-    private lateinit var adServerSpinner: UiObject
-    private lateinit var adTypeSpinner: UiObject
-    private lateinit var showAdButton: UiObject
-
-    private val adsErrorMessagesQueue = ArrayDeque<String>()
+    @get:Rule
+    val retryRule = RetryRule(3)
 
     @Before
     fun startMainActivityFromHomeScreen() {
         initDevice()
-        startActivity()
-        device.wait(
-            Until.hasObject(By.pkg(packageName).depth(0)),
-            timeout
-        )
-        initMainScreenComponents()
+        context = ApplicationProvider.getApplicationContext()
+    }
 
+    fun testAd(@StringRes stringResId: Int) {
+        val testCase = TestCaseRepository.getList().first { it.titleStringRes == stringResId }
+        TestCaseRepository.lastTestCase = testCase
+
+        goToAd(testCase)
+        checkAd(testCase)
     }
-    @After
-    fun checkErrors(){
-        displayErrorMessages()
-    }
+
+    protected abstract fun checkAd(testCase: TestCase)
 
     private fun initDevice() {
         device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
@@ -60,69 +56,13 @@ abstract class BaseAdsTest {
         )
     }
 
-    private fun startActivity() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val intent = context.packageManager.getLaunchIntentForPackage(
-            packageName
-        ).apply {
-            this?.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK)
+    private fun goToAd(testCase: TestCase) {
+//        Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
+
+        val intent = Intent(context, testCase.activity).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK
         }
         context.startActivity(intent)
-
     }
-
-    private fun initMainScreenComponents() {
-        adServerSpinner = device.findObject(
-            UiSelector().resourceId("$packageName:id/spinnerAdServer")
-        )
-        adTypeSpinner = device.findObject(
-            UiSelector().resourceId("$packageName:id/spinnerAdType")
-        )
-        showAdButton = device.findObject(
-            UiSelector().resourceId("$packageName:id/btnShowAd")
-        )
-    }
-
-    protected fun testAd(adServer: String, adName: String, retryCount: Int = 2) {
-        runCatching {
-            goToAd(adServer, adName)
-            checkAd(adServer,adName)
-        }.getOrElse { throwable ->
-            if (retryCount != 0) {
-                restartApp()
-                testAd(adServer, adName, retryCount - 1)
-            } else {
-                adsErrorMessagesQueue.add("$adServer - $adName ${throwable.stackTraceToString()}")
-                restartApp()
-            }
-        }
-    }
-    private fun displayErrorMessages() {
-        val failedTestsMessage = adsErrorMessagesQueue.joinToString(separator = System.lineSeparator())
-        if (failedTestsMessage.isNotEmpty()){
-            adsErrorMessagesQueue.clear()
-            throw AssertionError(failedTestsMessage)
-        }
-    }
-
-    protected abstract fun checkAd(adServer: String,adName: String)
-
-    private fun goToAd(adServer: String, adName: String) {
-        adServerSpinner.click()
-        selectSpinnerValue(adServer)
-        adTypeSpinner.click()
-        selectSpinnerValue(adName)
-        showAdButton.click()
-    }
-
-    private fun selectSpinnerValue(value: String) {
-        device.findObject(By.text(value)).click()
-    }
-    private fun restartApp(){
-        Runtime.getRuntime().exec(arrayOf("am", "force-stop", packageName))
-        device.pressHome()
-        startActivity()
-    }
-
 
 }
