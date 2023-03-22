@@ -22,6 +22,7 @@ import org.prebid.mobile.api.data.AdFormat;
 import org.prebid.mobile.api.exceptions.AdException;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.rendering.errors.VastParseError;
+import org.prebid.mobile.rendering.interstitial.InterstitialSizes;
 import org.prebid.mobile.rendering.loading.AdLoadListener;
 import org.prebid.mobile.rendering.networking.tracking.TrackingManager;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
@@ -37,6 +38,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.prebid.mobile.rendering.parser.AdResponseParserVast.*;
+
+import android.text.TextUtils;
 
 public class CreativeModelsMakerVast extends CreativeModelsMaker {
 
@@ -165,10 +168,12 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
             endCardModel.setHasEndCard(true);
 
             // Create CompanionAd object
+            Boolean isPortraitOrNull = TextUtils.isEmpty(adConfiguration.getInterstitialSize()) ? null : InterstitialSizes.isPortrait(adConfiguration.getInterstitialSize());
             Companion companionAd = AdResponseParserVast.getCompanionAd(latestVastWrapperParser.getVast()
-                                                                                               .getAds()
-                                                                                               .get(0)
-                                                                                               .getInline());
+                            .getAds()
+                            .get(0)
+                            .getInline(),
+                    isPortraitOrNull);
             if (companionAd != null) {
                 switch (AdResponseParserVast.getCompanionResourceFormat(companionAd)) {
                     case RESOURCE_FORMAT_HTML:

@@ -200,8 +200,7 @@ public class AdResponseParserVastTest {
         AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
 
         AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
-        assertEquals(true,
-                tempVast.getMediaFileUrl(vast, 0).isEmpty());
+        assertTrue(tempVast.getMediaFileUrl(vast, 0).isEmpty());
     }
 
     @Test
@@ -963,19 +962,19 @@ public class AdResponseParserVastTest {
         // Null creatives
         mockInLine = setupInLine();
         mockInLine.setCreatives(null);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // Empty creatives list
         mockInLine = setupInLine();
         mockInLine.setCreatives(new ArrayList<>());
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // Empty companion ad list
         mockInLine = setupInLine();
         mockInLine.getCreatives().get(0).setCompanionAds(new ArrayList<>());
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // One companion
@@ -983,7 +982,7 @@ public class AdResponseParserVastTest {
         companions = mockInLine.getCreatives().get(0).getCompanionAds();
         mockCompanionA = mock(Companion.class);
         companions.add(mockCompanionA);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertEquals(mockCompanionA, result);
 
         // Companion B format better than Companion A format
@@ -999,7 +998,7 @@ public class AdResponseParserVastTest {
         when(mockCompanionB.getHeight()).thenReturn("1");
         when(mockCompanionB.getHtmlResource()).thenReturn(mock(HTMLResource.class));
         companions.add(mockCompanionB);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertEquals(mockCompanionB, result);
 
         // Same format for Companion A & B, but B has better resolution
@@ -1015,8 +1014,40 @@ public class AdResponseParserVastTest {
         when(mockCompanionB.getHeight()).thenReturn("2");
         when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
         companions.add(mockCompanionB);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, true);
         assertEquals(mockCompanionB, result);
+
+        // Different format, resolution for Companion A & B, but A has right orientation portrait
+        mockInLine = setupInLine();
+        companions = mockInLine.getCreatives().get(0).getCompanionAds();
+        mockCompanionA = mock(Companion.class);
+        when(mockCompanionA.getWidth()).thenReturn("10");
+        when(mockCompanionA.getHeight()).thenReturn("20");
+        when(mockCompanionA.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionA);
+        mockCompanionB = mock(Companion.class);
+        when(mockCompanionB.getWidth()).thenReturn("25");
+        when(mockCompanionB.getHeight()).thenReturn("15");
+        when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionB);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, true);
+        assertEquals(mockCompanionA, result);
+
+        // Different format, resolution for Companion A & B, but A has right orientation landscape
+        mockInLine = setupInLine();
+        companions = mockInLine.getCreatives().get(0).getCompanionAds();
+        mockCompanionA = mock(Companion.class);
+        when(mockCompanionA.getWidth()).thenReturn("20");
+        when(mockCompanionA.getHeight()).thenReturn("10");
+        when(mockCompanionA.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionA);
+        mockCompanionB = mock(Companion.class);
+        when(mockCompanionB.getWidth()).thenReturn("15");
+        when(mockCompanionB.getHeight()).thenReturn("25");
+        when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionB);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, false);
+        assertEquals(mockCompanionA, result);
     }
 
     private InLine setupInLine() {

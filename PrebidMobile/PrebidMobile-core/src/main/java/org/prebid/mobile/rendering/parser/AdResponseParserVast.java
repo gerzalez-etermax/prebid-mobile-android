@@ -25,10 +25,13 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 
-import org.prebid.mobile.LogUtil;
 import org.prebid.mobile.rendering.errors.VastParseError;
 import org.prebid.mobile.rendering.loading.FileDownloadTask;
 import org.prebid.mobile.rendering.networking.parameters.BasicParameterBuilder;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionLandscapeOrientationComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionPortraitOrientationComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionResolutionComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionResourceFormatComparator;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
 import org.prebid.mobile.rendering.video.VideoAdEvent;
 import org.prebid.mobile.rendering.video.vast.*;
@@ -270,16 +273,23 @@ public class AdResponseParserVast extends AdResponseParserBase {
     }
 
     private void orderAndFilter(AdResponseParserVast parserVast, ArrayList<MediaFile> eligibleMediaFiles) {
-        long duration = Utils.getMsFrom(parserVast.getVideoDuration(parserVast, 0));
+        removeOverSizeMedia(eligibleMediaFiles, Utils.getMsFrom(parserVast.getVideoDuration(parserVast, 0)));
+        sortedWithStrategies(eligibleMediaFiles);
+    }
+
+    private void sortedWithStrategies(ArrayList<MediaFile> eligibleMediaFiles) {
+        for (Comparator<MediaFile> sorter : mediaFileQualitySorterStrategies) {
+            Collections.sort(eligibleMediaFiles, sorter);
+        }
+    }
+
+    private void removeOverSizeMedia(ArrayList<MediaFile> eligibleMediaFiles, long duration) {
         Iterator<MediaFile> iterator = eligibleMediaFiles.iterator();
         while (iterator.hasNext()) {
             MediaFile mediaFile = iterator.next();
             if (isFileSizeOverMax(duration, getIntOrZero(mediaFile.getBitrate()))) {
                 iterator.remove();
             }
-        }
-        for (Comparator<MediaFile> sorter : mediaFileQualitySorterStrategies) {
-            Collections.sort(eligibleMediaFiles, sorter);
         }
     }
 
@@ -553,13 +563,14 @@ public class AdResponseParserVast extends AdResponseParserBase {
      * Returns best companion inside InLine
      */
     public static Companion getCompanionAd(@NonNull
-                                           InLine inline) {
+                                           InLine inline,@Nullable Boolean isPortrait) {
 
         if (inline.getCreatives() == null) {
             return null;
         }
 
         Companion bestCompanion = null;
+        ArrayList<Companion> companionAdsNotNulls = new ArrayList<>();
         for (Creative creative : inline.getCreatives()) {
             ArrayList<Companion> companionAds = creative.getCompanionAds();
 
@@ -567,85 +578,34 @@ public class AdResponseParserVast extends AdResponseParserBase {
             if (companionAds == null || companionAds.size() == 0) {
                 continue;
             }
-
-            for (int i = 0; i < companionAds.size(); i++) {
-                try {
-                    Companion currentCompanion = companionAds.get(i);
-                    if (compareCompanions(currentCompanion, bestCompanion) == 1) {
-                        bestCompanion = currentCompanion;
-                    }
-                } catch (IllegalArgumentException e) {
-                    LogUtil.error(TAG, e.getMessage());
-                }
+            for (Companion companion : companionAds) {
+                if(companion != null)
+                    companionAdsNotNulls.add(companion);
             }
         }
-
+        sortCompanions(isPortrait, companionAdsNotNulls);
+        if(!companionAdsNotNulls.isEmpty())
+            bestCompanion = companionAdsNotNulls.get(0);
         return bestCompanion;
     }
 
     /**
-     * Determine which is the better companion
-     * If 'companionA' equals 'companionB', return 0
-     * If 'companionA' is better, return 1
-     * If 'companionB' is better, return 2
+     * Sort companions better first
      *
      * Ranking rules
-     * 1st: HTML > IFRAME > STATIC
-     * 2nd: Size
+     * 1st: Device orientation
+     * 2nd: HTML > IFRAME > STATIC
+     * 3er: Size
      */
-    private static int compareCompanions(Companion companionA, Companion companionB)
-    throws IllegalArgumentException {
-        if (companionA == null && companionB == null) {
-            throw new IllegalArgumentException("No companions to compare") ;
+    private static void sortCompanions(@Nullable Boolean isPortrait, ArrayList<Companion> companions) {
+        Collections.sort(companions, new CompanionResolutionComparator());
+        Collections.sort(companions, new CompanionResourceFormatComparator());
+        if(isPortrait != null){
+            if (isPortrait) Collections.sort(companions, new CompanionPortraitOrientationComparator());
+            else Collections.sort(companions, new CompanionLandscapeOrientationComparator());
         }
-        else if (companionA == null) {
-            return 2;
-        }
-        else if (companionB == null) {
-            return 1;
-        }
-
-        Integer resourceFormatA = getCompanionResourceFormat(companionA);
-        Integer resourceFormatB = getCompanionResourceFormat(companionB);
-        if (resourceFormatA == null && resourceFormatB == null) {
-            throw new IllegalArgumentException("No companion resources to compare") ;
-        }
-        else if (resourceFormatA == null) {
-            return 2;
-        }
-        else if (resourceFormatB == null) {
-            return 1;
-        }
-        else if (resourceFormatA < resourceFormatB) {
-            return 1;
-        }
-        else if (resourceFormatA > resourceFormatB) {
-            return 2;
-        }
-
-        // If resource formats are equal, compare size
-        int resolutionA = getResolution(companionA.getWidth(), companionA.getHeight());
-        int resolutionB = getResolution(companionB.getWidth(), companionB.getHeight());
-        if (resolutionA < resolutionB)  {
-            return 2;
-        }
-        else if (resolutionA > resolutionB) {
-            return 1;
-        }
-
-        // Companions are equal
-        return 0;
     }
 
-    /**
-     * Returns product of width and height
-     */
-    private static int getResolution(String width, String height) {
-        int numWidth = Utils.isBlank(width) ? 0 : Integer.parseInt(width);
-        int numHeight = Utils.isBlank(height) ? 0 : Integer.parseInt(height);
-
-        return numWidth * numHeight;
-    }
 
     /**
      * Returns companion ad's resource format
