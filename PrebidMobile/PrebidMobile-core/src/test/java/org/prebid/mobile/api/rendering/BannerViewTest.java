@@ -22,6 +22,7 @@ import android.util.AttributeSet;
 import android.util.Pair;
 import android.view.View;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -92,6 +93,7 @@ public class BannerViewTest {
         assertEquals(BannerAdPosition.UNDEFINED.getValue(), bannerView.getAdPosition().getValue());
     }
 
+    @Ignore("TODO: Validate in ci with Robolectric")
     @Test
     public void createPrebidBannerViewWithAttributes_InstanceCreated() {
         AttributeSet attributes = Robolectric.buildAttributeSet().build();

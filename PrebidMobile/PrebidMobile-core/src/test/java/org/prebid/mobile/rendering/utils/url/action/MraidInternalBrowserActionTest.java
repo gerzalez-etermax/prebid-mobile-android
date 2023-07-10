@@ -134,7 +134,7 @@ public class MraidInternalBrowserActionTest {
         Intent intentArgument = intentArgumentCaptor.getValue();
 
         assertEquals(intentArgument.getAction(), Intent.ACTION_VIEW);
-        assertEquals(intentArgument.getFlags(), BuildConfig.DEBUG ? 0 : Intent.FLAG_ACTIVITY_NEW_TASK);
+        assertEquals(intentArgument.getFlags(),  Intent.FLAG_ACTIVITY_NEW_TASK);
     }
 
     @Test
