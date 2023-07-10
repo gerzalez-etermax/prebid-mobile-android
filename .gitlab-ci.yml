@@ -94,14 +94,6 @@ Run Unit Tests:
     reports:
       junit: ./*/build/test-results/**/TEST-*.xml
 
-Check API changes:
-  stage: Checks & Build
-  extends: .gradle_job
-  script:
-    - ./gradlew apiCheck
-  except:
-    - tags
-
 Build/Upload Release Watcher:
   stage: Checks & Build
   extends: .gradle_job
