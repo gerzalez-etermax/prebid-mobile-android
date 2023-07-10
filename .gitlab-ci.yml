@@ -138,14 +138,3 @@ Publish UnityProxy External:
   variables:
     PUBLICATION: UnityProxy
 
-
-manual:check_dependencies:
-  extends: .check_dependencies
-  when: manual
-  only:
-    - master
-
-schedule:check_dependencies:
-  extends: .check_dependencies
-  only:
-    - schedules
