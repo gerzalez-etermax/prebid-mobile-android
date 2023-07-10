@@ -1,0 +1,72 @@
+#!/bin/bash
+
+publish_to_dependency_manager() {
+  local lib_name=''
+  local version=''
+  local current_path=''
+
+  function read_gradle_property {
+     local prop_key=$1
+     local prop_value=$(cat "gradle.properties" | grep "$prop_key" | cut -d'=' -f2)
+     echo "$prop_value"
+  }
+
+  target_branch=$2
+  local is_patch=$3
+  local is_downgrade=$4
+
+  push_retries=5
+  function try_to_push() {
+    if [ $push_retries -gt 0 ]; then
+      if ! git push --set-upstream origin $target_branch; then
+          echo "Push failed. Rebasing and retrying..."
+          sleep 2
+          git pull --rebase
+          push_retries="$((push_retries-1))"
+          try_to_push
+      fi
+    fi
+  }
+
+  function get_project_name() {
+    local lib_name=$1
+
+    local project_name=$(echo ${lib_name} | awk '{print tolower($0)}')
+    echo "mediation:$project_name"
+  }
+
+  function get_dependency_version() {
+    local project_name=$1
+    local dependency_name=$2
+    local sed_string="s/^.*${dependency_name}:\([0-9.]*\).*/\1/p"
+    local gradle_result="$(./gradlew "${project_name}":dependencyInsight --dependency "${dependency_name}" --configuration releaseRuntimeClasspath)" #2>/dev/null to supress gradle errors
+    local dep_version="$(echo "${gradle_result}" | sed -n "${sed_string}")"
+    echo "$dep_version"
+  }
+
+  lib_name=$1
+  version="$(read_gradle_property "${lib_name}Version")"
+  current_path="$(pwd)"
+
+  project_name="$(get_project_name "${lib_name}")"
+  xmed_dep_version="$(get_dependency_version "${project_name}" com.etermax.android.xmediator:core)"
+
+  echo "Publish Library with name ${lib_name} to unity-adapters repo"
+
+  rm -rf unity-adapters && \
+  git clone https://gitlab-ci-token:"${CI_JOB_TOKEN}"@gitlab.com/etermax/ads/xmediator/unity-adapters.git && \
+  cd unity-adapters && \
+  git config user.name 'XMediator CI' && \
+  git config user.email 'xmediator@etermax.com' && \
+  git remote set-url origin "https://$GITLAB_CI_WRITE_CREDENTIALS@gitlab.com/etermax/ads/xmediator/unity-adapters.git" && \
+  git fetch --all && \
+  (git checkout "$target_branch" || true) && \
+  (git checkout -b "$target_branch" || true) && \
+  source ./buildscripts/upgrade_version.sh && \
+  upgrade_version -a "$lib_name" -p Android -v "$version" -d "XMediator;$xmed_dep_version;" -i "$is_patch" -g "$is_downgrade" && \
+  git add . && \
+  git commit -m "$lib_name: upgrade Android adapter to $version" && \
+  try_to_push
+
+  cd "${current_path}" && rm -rf unity-adapters
+}

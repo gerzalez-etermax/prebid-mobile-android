@@ -1,0 +1,15 @@
+#!/bin/bash
+
+function read_gradle_property {
+   prop_key=$1
+   prop_value=$(cat "gradle.properties" | grep "$prop_key" | cut -d'=' -f2)
+   echo "$prop_value"
+}
+
+name=$1
+version="$(read_gradle_property "${name}Version")"
+tag="${name}-${version}"
+
+echo "Tag: ${tag}"
+git tag "${tag}"
+git push --tags --quiet

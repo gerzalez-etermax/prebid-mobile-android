@@ -1,0 +1,151 @@
+image: registry.gitlab.com/etermax/android/android-ci/java_11:latest
+
+variables:
+  AWS_ROLE_ARN: arn:aws:iam::804549073939:role/GitlabDeployX3Mediator
+
+stages:
+  - Checks & Build
+  - Internal (Etermax)
+  - External (X3M)
+
+workflow:
+  rules:
+    - if: '$CI_COMMIT_TAG != null' 
+      when: never
+    - when: always
+
+# Caches
+.cache_gradle_wrapper_read_only: &cache_gradle_wrapper_read_only
+  key: pbm-gradle-wrapper
+  paths:
+    - .gradle/wrapper
+  policy: pull
+
+.cache_gradle_caches_read_only: &cache_gradle_caches_read_only
+  key: pbm-gradle-caches
+  paths:
+    - .gradle/caches
+  policy: pull
+
+.cache_all_write: &cache_all_write
+  - <<: *cache_gradle_wrapper_read_only
+    policy: pull-push
+  - <<: *cache_gradle_caches_read_only
+    policy: pull-push
+
+.gradle_job:
+  tags:
+    - sre-runner
+  before_script:
+    - source ./ci/setup_gradle
+  cache:
+    - *cache_gradle_wrapper_read_only
+    - *cache_gradle_caches_read_only
+
+.publish_script: &publish_script
+  - ./gradlew clean publish${PUBLICATION}PublicationToMavenRepository -PisSnapshot=$IS_SNAPSHOT -PisExternal=$IS_EXTERNAL -PuseLocalDependencies=false
+
+.publish_internal:
+  stage: Internal (Etermax)
+  extends: .gradle_job
+  script:
+    - source ./ci/login_acceso_d
+    - *publish_script
+    - source ./ci/setup_git
+    - source ./ci/tag_publication $PUBLICATION
+  variables:
+    IS_SNAPSHOT: "false"
+    IS_EXTERNAL: "false"
+  when: manual
+
+.publish_external:
+  stage: External (X3M)
+  extends: .gradle_job
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "master"'
+      variables:
+        UNITY_ADAPTERS_TARGET_BRANCH: "main"
+        UNITY_ADAPTERS_IS_PATCH: "false"
+        UNITY_ADAPTERS_IS_DOWNGRADE: "false"
+    - if: '$CI_COMMIT_BRANCH != "master"'
+      variables:
+        UNITY_ADAPTERS_IS_PATCH: "true"
+        UNITY_ADAPTERS_IS_DOWNGRADE: "true"
+  script:
+    - if [ -z $UNITY_ADAPTERS_TARGET_BRANCH ]; then echo "Please specify the unity-adapters repository UNITY_ADAPTERS_TARGET_BRANCH using CI/CD variables."; exit 1; fi
+    - source ./ci/login_aws
+    - *publish_script
+    - source ./ci/setup_git
+    - source ./ci/publish_to_dependency_manager && publish_to_dependency_manager $PUBLICATION $UNITY_ADAPTERS_TARGET_BRANCH $UNITY_ADAPTERS_IS_PATCH $UNITY_ADAPTERS_IS_DOWNGRADE
+  variables:
+    IS_SNAPSHOT: "false"
+    IS_EXTERNAL: "true"
+  when: manual
+
+Run Unit Tests:
+  stage: Checks & Build
+  extends: .gradle_job
+  cache: *cache_all_write
+  script:
+    - ./gradlew :PrebidMobile-core:test
+  except:
+    - tags
+  artifacts:
+    reports:
+      junit: ./*/build/test-results/**/TEST-*.xml
+
+Check API changes:
+  stage: Checks & Build
+  extends: .gradle_job
+  script:
+    - ./gradlew apiCheck
+  except:
+    - tags
+
+Build/Upload Release Watcher:
+  stage: Checks & Build
+  extends: .gradle_job
+  variables:
+    AWS_ACCESS_KEY_ID: ${GLOBAL_RW_AWS_ACCESS_KEY_ID}
+    AWS_DEFAULT_REGION: ${GLOBAL_RW_AWS_DEFAULT_REGION}
+    AWS_SECRET_ACCESS_KEY: ${GLOBAL_RW_AWS_SECRET_ACCESS_KEY}
+  script:
+    - bundle config https://gitlab.com/etermax/platform/continuous-integration/plugin-fastlane.git gitlab-ci-token:${CI_JOB_TOKEN}
+    - bundle install --jobs 4 --without development:test
+    - bundle exec fastlane install_plugins
+    - bundle exec fastlane build_and_upload_snapshot_to_release_watcher
+  when: manual
+  only:
+    - master
+
+Publish Core Internal:
+  extends: .publish_internal
+  variables:
+    PUBLICATION: Core
+
+Publish UnityProxy Internal:
+  extends: .publish_internal
+  variables:
+    PUBLICATION: UnityProxy
+
+Publish Core External:
+  extends: .publish_external
+  variables:
+    PUBLICATION: Core
+
+Publish UnityProxy External:
+  extends: .publish_external
+  variables:
+    PUBLICATION: UnityProxy
+
+
+manual:check_dependencies:
+  extends: .check_dependencies
+  when: manual
+  only:
+    - master
+
+schedule:check_dependencies:
+  extends: .check_dependencies
+  only:
+    - schedules
