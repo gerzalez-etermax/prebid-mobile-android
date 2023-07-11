@@ -62,12 +62,12 @@ workflow:
   stage: External (X3M)
   extends: .gradle_job
   rules:
-    - if: '$CI_COMMIT_BRANCH == "master"'
+    - if: '$CI_COMMIT_BRANCH == "master_xmediator"'
       variables:
         UNITY_ADAPTERS_TARGET_BRANCH: "main"
         UNITY_ADAPTERS_IS_PATCH: "false"
         UNITY_ADAPTERS_IS_DOWNGRADE: "false"
-    - if: '$CI_COMMIT_BRANCH != "master"'
+    - if: '$CI_COMMIT_BRANCH != "master_xmediator"'
       variables:
         UNITY_ADAPTERS_IS_PATCH: "true"
         UNITY_ADAPTERS_IS_DOWNGRADE: "true"
@@ -94,39 +94,14 @@ Run Unit Tests:
     reports:
       junit: ./*/build/test-results/**/TEST-*.xml
 
-Build/Upload Release Watcher:
-  stage: Checks & Build
-  extends: .gradle_job
-  variables:
-    AWS_ACCESS_KEY_ID: ${GLOBAL_RW_AWS_ACCESS_KEY_ID}
-    AWS_DEFAULT_REGION: ${GLOBAL_RW_AWS_DEFAULT_REGION}
-    AWS_SECRET_ACCESS_KEY: ${GLOBAL_RW_AWS_SECRET_ACCESS_KEY}
-  script:
-    - bundle config https://gitlab.com/etermax/platform/continuous-integration/plugin-fastlane.git gitlab-ci-token:${CI_JOB_TOKEN}
-    - bundle install --jobs 4 --without development:test
-    - bundle exec fastlane install_plugins
-    - bundle exec fastlane build_and_upload_snapshot_to_release_watcher
-  when: manual
-  only:
-    - master
-
 Publish Core Internal:
   extends: .publish_internal
   variables:
-    PUBLICATION: Core
-
-Publish UnityProxy Internal:
-  extends: .publish_internal
-  variables:
-    PUBLICATION: UnityProxy
+    PUBLICATION: PrebidMobileCore
 
 Publish Core External:
   extends: .publish_external
   variables:
-    PUBLICATION: Core
+    PUBLICATION: PrebidMobileCore
 
-Publish UnityProxy External:
-  extends: .publish_external
-  variables:
-    PUBLICATION: UnityProxy
 
