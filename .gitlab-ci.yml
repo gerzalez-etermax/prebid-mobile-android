@@ -52,7 +52,7 @@ workflow:
     - source ./ci/login_acceso_d
     - *publish_script
     - source ./ci/setup_git
-    - source ./ci/tag_publication $PUBLICATION
+    - source ./ci/tag_publication
   variables:
     IS_SNAPSHOT: "false"
     IS_EXTERNAL: "false"
@@ -61,22 +61,9 @@ workflow:
 .publish_external:
   stage: External (X3M)
   extends: .gradle_job
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "master_xmediator"'
-      variables:
-        UNITY_ADAPTERS_TARGET_BRANCH: "main"
-        UNITY_ADAPTERS_IS_PATCH: "false"
-        UNITY_ADAPTERS_IS_DOWNGRADE: "false"
-    - if: '$CI_COMMIT_BRANCH != "master_xmediator"'
-      variables:
-        UNITY_ADAPTERS_IS_PATCH: "true"
-        UNITY_ADAPTERS_IS_DOWNGRADE: "true"
   script:
-    - if [ -z $UNITY_ADAPTERS_TARGET_BRANCH ]; then echo "Please specify the unity-adapters repository UNITY_ADAPTERS_TARGET_BRANCH using CI/CD variables."; exit 1; fi
     - source ./ci/login_aws
     - *publish_script
-    - source ./ci/setup_git
-    - source ./ci/publish_to_dependency_manager && publish_to_dependency_manager $PUBLICATION $UNITY_ADAPTERS_TARGET_BRANCH $UNITY_ADAPTERS_IS_PATCH $UNITY_ADAPTERS_IS_DOWNGRADE
   variables:
     IS_SNAPSHOT: "false"
     IS_EXTERNAL: "true"
