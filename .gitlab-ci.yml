@@ -51,8 +51,8 @@ workflow:
   script:
     - source ./ci/login_acceso_d
     - *publish_script
-    - source ./ci/setup_git
-    - source ./ci/tag_publication
+   # - source ./ci/setup_git
+   # - source ./ci/tag_publication
   variables:
     IS_SNAPSHOT: "false"
     IS_EXTERNAL: "false"
