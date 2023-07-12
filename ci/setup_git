@@ -1,0 +1,6 @@
+#!/bin/bash
+
+git config --global user.name 'XAds CI'
+git config --global user.email 'xads@etermax.com'
+git remote set-url origin "https://$GITLAB_CI_WRITE_CREDENTIALS@gitlab.com/etermax/ads/prebid-mobile/prebid-mobile-android.git"
+

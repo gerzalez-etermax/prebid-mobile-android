@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export GRADLE_USER_HOME=$(pwd)/.gradle
+export ROOT_PROJECT_FOLDER=$(pwd)
+export WRAPPER_PATH=$ROOT_PROJECT_FOLDER/gradlew
+export TEST_APP_PATH=$ROOT_PROJECT_FOLDER/Example/PrebidDemoKotlin
+mkdir -p $GRADLE_USER_HOME
+chmod +x ./gradlew

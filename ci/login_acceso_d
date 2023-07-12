@@ -1,0 +1,4 @@
+#!/bin/bash
+
+git clone --depth 1 https://gitlab-ci-token:"${CI_JOB_TOKEN}"@gitlab.com/etermax/sre/acceso-d.git
+bash acceso-d/client/authorize.sh "$AWS_ACCOUNT_ID_MVN" "$AWS_DEFAULT_REGION"

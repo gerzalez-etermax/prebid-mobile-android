@@ -1,6 +1,12 @@
 apply from: '../android.gradle'
 apply from: '../publisher.gradle'
 apply from: '../tests.gradle'
+apply plugin: PublishPlugin
+
+publish.groupId = "com.etermax.android"
+publish.artifactId = "prebid-mobile-sdk"
+publish.version = getProject().getProperties().get("prebidSdkVersionName")
+publish.publicationName = 'PrebidMobileCore'
 
 android {
     def getGitHash = { ->

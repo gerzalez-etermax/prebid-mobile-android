@@ -1,0 +1,4 @@
+#!/bin/bash
+
+git clone --depth 1 https://gitlab-ci-token:"${CI_JOB_TOKEN}"@gitlab.com/etermax/security/acceso-sts.git
+source ./acceso-sts/client/access-sts.sh "$AWS_ROLE_ARN"
