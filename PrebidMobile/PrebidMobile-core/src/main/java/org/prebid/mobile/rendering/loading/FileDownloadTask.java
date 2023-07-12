@@ -37,6 +37,7 @@ public class FileDownloadTask extends BaseNetworkTask {
     private static final String TAG = "LibraryDownloadTask";
     protected FileDownloadListener listener;
     protected File file;
+    public static int maxMBFileSize = 25;
 
     private boolean ignoreContentLength = false;
 
@@ -71,7 +72,7 @@ public class FileDownloadTask extends BaseNetworkTask {
     }
 
     protected long getMaxFileSize() {
-        return 25 * 1024 * 1024; // 25 MiB
+        return (long) maxMBFileSize * 1024 * 1024; // bytes
     }
 
     @Override

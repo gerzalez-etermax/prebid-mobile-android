@@ -98,6 +98,26 @@ public class PrebidMobile {
     @Deprecated
     public static LogLevel logLevel = LogLevel.NONE;
 
+    /**
+     * Strategy to select de Media File to be render {@link VastMediaSelectionStrategy}
+     */
+    public static VastMediaSelectionStrategy vastMediaSelectionStrategy = VastMediaSelectionStrategy.HIGH_QUALITY;
+
+    /**
+     * Banner timeout to retrieve and load creative. Default 6 seconds
+     */
+    public static long bannerTimeout = 6 * 1000;
+
+    /**
+     * Interstitial timeout to retrieve and load creative. Default 30 seconds
+     */
+    public static long interstitialTimeout = 30 * 1000;
+
+    /**
+     * Vast timeout to retrieve and load creative. Default 30 seconds
+     */
+    public static long vastTimeout = 30 * 1000;
+
 
     private static boolean pbsDebug = false;
     private static boolean shareGeoLocation = false;
@@ -397,6 +417,12 @@ public class PrebidMobile {
         }
     }
 
+    public enum VastMediaSelectionStrategy {
+        HIGH_QUALITY,
+        HIGH_LIMITED_QUALITY,
+        MEDIUM_QUALITY,
+        LOW_QUALITY,
+    }
 
     private static int[] parseVersion(String version) {
         int[] versions = new int[]{0, 0, 0};

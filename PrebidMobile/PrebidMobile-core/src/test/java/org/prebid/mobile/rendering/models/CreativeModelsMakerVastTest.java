@@ -250,7 +250,7 @@ public class CreativeModelsMakerVastTest {
         requesterVastField.setAccessible(true);
         requesterVastField.set(parserExtractor, asyncVastLoader);
 
-        parserExtractor.extract(adResponse.responseString);
+        parserExtractor.extract(adResponse.responseString, true);
 
         ArgumentCaptor<VastExtractorResult> varArgsCapture = ArgumentCaptor.forClass(VastExtractorResult.class);
         verify(mockListener).onResult(varArgsCapture.capture());

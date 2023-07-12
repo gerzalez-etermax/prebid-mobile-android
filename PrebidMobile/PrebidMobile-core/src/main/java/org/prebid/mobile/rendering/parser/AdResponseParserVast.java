@@ -16,14 +16,22 @@
 
 package org.prebid.mobile.rendering.parser;
 
+import static org.prebid.mobile.rendering.utils.helpers.Utils.getIntOrZero;
+
 import android.text.TextUtils;
 import android.util.Xml;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import org.prebid.mobile.LogUtil;
+
 import org.prebid.mobile.rendering.errors.VastParseError;
+import org.prebid.mobile.rendering.loading.FileDownloadTask;
 import org.prebid.mobile.rendering.networking.parameters.BasicParameterBuilder;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionLandscapeOrientationComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionPortraitOrientationComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionResolutionComparator;
+import org.prebid.mobile.rendering.parser.companionselector.CompanionResourceFormatComparator;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
 import org.prebid.mobile.rendering.video.VideoAdEvent;
 import org.prebid.mobile.rendering.video.vast.*;
@@ -33,6 +41,8 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -53,6 +63,8 @@ public class AdResponseParserVast extends AdResponseParserBase {
     private ArrayList<Impression> impressions;
 
     private VAST vast;
+
+    private ArrayList<Comparator<MediaFile>> mediaFileQualitySorterStrategies;
 
     public ArrayList<org.prebid.mobile.rendering.video.vast.Tracking> getTrackings() {
         return trackings;
@@ -94,29 +106,29 @@ public class AdResponseParserVast extends AdResponseParserBase {
         public final static int EVENT_PROGRESS = 21;
 
         public final static String[] EVENT_MAPPING = new String[]{
-            "creativeView",
-            "start",
-            "firstQuartile",
-            "midpoint",
-            "thirdQuartile",
-            "complete",
-            "mute",
-            "unmute",
-            "pause",
-            "rewind",
-            "resume",
-            "fullscreen",
-            "exitFullscreen",
-            "expand",
-            "collapse",
-            "acceptInvitation",
-            "acceptInvitationLinear",
-            "closeLinear",
-            "close",
-            "skip",
-            "error",
-            "impression",
-            "click"};
+                "creativeView",
+                "start",
+                "firstQuartile",
+                "midpoint",
+                "thirdQuartile",
+                "complete",
+                "mute",
+                "unmute",
+                "pause",
+                "rewind",
+                "resume",
+                "fullscreen",
+                "exitFullscreen",
+                "expand",
+                "collapse",
+                "acceptInvitation",
+                "acceptInvitationLinear",
+                "closeLinear",
+                "close",
+                "skip",
+                "error",
+                "impression",
+                "click"};
 
         private int event;
 
@@ -145,10 +157,11 @@ public class AdResponseParserVast extends AdResponseParserBase {
         }
     }
 
-    public AdResponseParserVast(String data) throws VastParseError {
+    public AdResponseParserVast(String data, ArrayList<Comparator<MediaFile>> mediaFileQualitySorterStrategies) throws VastParseError {
         trackings = new ArrayList<>();
         impressions = new ArrayList<>();
         clickTrackings = new ArrayList<>();
+        this.mediaFileQualitySorterStrategies = mediaFileQualitySorterStrategies;
         ready = false;
 
         try {
@@ -211,9 +224,9 @@ public class AdResponseParserVast extends AdResponseParserBase {
     }
 
     //Returns the best media file fit for the device
-    public String getMediaFileUrl(AdResponseParserVast parserVast, int index) {
-        String myBestMediaFileURL = null;
+    public List<String> getMediaFileUrl(AdResponseParserVast parserVast, int index) {
         ArrayList<MediaFile> eligibleMediaFiles = new ArrayList<>();
+        ArrayList<String> mediaFileUrls = new ArrayList<>();
         /**
          * Here we use a recursion pattern to traverse the nested VAST nodes "parserVast",
          * until we reach the last nested node, which should be InLine,
@@ -243,35 +256,41 @@ public class AdResponseParserVast extends AdResponseParserBase {
                     }
 
                     if (eligibleMediaFiles.size() == 0) {
-                        return myBestMediaFileURL;
+                        return mediaFileUrls;
                     }
-
-                    // choose the one with the highest resolution amongst all
-                    MediaFile best = eligibleMediaFiles.get(0);
-                    int bestValues = (Utils.isBlank(best.getWidth())
-                                      ? 0
-                                      : Integer.parseInt(best.getWidth())) * (Utils.isBlank(best.getHeight())
-                                                                              ? 0
-                                                                              : Integer.parseInt(best.getHeight()));
-                    myBestMediaFileURL = best.getValue();
-
-                    for (int i = 0; i < eligibleMediaFiles.size(); i++) {
-                        MediaFile current = eligibleMediaFiles.get(i);
-                        int currentValues = (Utils.isBlank(current.getWidth())
-                                             ? 0
-                                             : Integer.parseInt(current.getWidth())) * (Utils.isBlank(current.getHeight())
-                                                                                        ? 0
-                                                                                        : Integer.parseInt(current.getHeight()));
-                        if (currentValues > bestValues) {
-                            bestValues = currentValues;
-                            best = current;
-                            myBestMediaFileURL = best.getValue();
-                        }
-                    }
+                    orderAndFilter(parserVast, eligibleMediaFiles);
+                    populateMediaFileUrls(mediaFileUrls, eligibleMediaFiles);
                 }
             }
         }
-        return myBestMediaFileURL;
+        return mediaFileUrls;
+    }
+
+    private void populateMediaFileUrls(ArrayList<String> mediaFileUrls, ArrayList<MediaFile> eligibleMediaFiles) {
+        for (MediaFile mediaFile : eligibleMediaFiles) {
+            mediaFileUrls.add(mediaFile.getValue());
+        }
+    }
+
+    private void orderAndFilter(AdResponseParserVast parserVast, ArrayList<MediaFile> eligibleMediaFiles) {
+        removeOverSizeMedia(eligibleMediaFiles, Utils.getMsFrom(parserVast.getVideoDuration(parserVast, 0)));
+        sortedWithStrategies(eligibleMediaFiles);
+    }
+
+    private void sortedWithStrategies(ArrayList<MediaFile> eligibleMediaFiles) {
+        for (Comparator<MediaFile> sorter : mediaFileQualitySorterStrategies) {
+            Collections.sort(eligibleMediaFiles, sorter);
+        }
+    }
+
+    private void removeOverSizeMedia(ArrayList<MediaFile> eligibleMediaFiles, long duration) {
+        Iterator<MediaFile> iterator = eligibleMediaFiles.iterator();
+        while (iterator.hasNext()) {
+            MediaFile mediaFile = iterator.next();
+            if (isFileSizeOverMax(duration, getIntOrZero(mediaFile.getBitrate()))) {
+                iterator.remove();
+            }
+        }
     }
 
     @VisibleForTesting
@@ -314,16 +333,14 @@ public class AdResponseParserVast extends AdResponseParserBase {
                     return creative.getLinear().getTrackingEvents();
                 }
             }
-        }
-        else if (ad.getWrapper() != null && ad.getWrapper().getCreatives() != null) {
+        } else if (ad.getWrapper() != null && ad.getWrapper().getCreatives() != null) {
 
             for (Creative creative : ad.getWrapper().getCreatives()) {
 
                 if (creative.getLinear() != null) {
 
                     return creative.getLinear().getTrackingEvents();
-                }
-                else if (creative.getNonLinearAds() != null) {
+                } else if (creative.getNonLinearAds() != null) {
 
                     return creative.getNonLinearAds().getTrackingEvents();
                 }
@@ -338,8 +355,7 @@ public class AdResponseParserVast extends AdResponseParserBase {
         if (ad.getInline() != null) {
 
             return ad.getInline().getImpressions();
-        }
-        else if (ad.getWrapper() != null) {
+        } else if (ad.getWrapper() != null) {
 
             return ad.getWrapper().getImpressions();
         }
@@ -479,9 +495,9 @@ public class AdResponseParserVast extends AdResponseParserBase {
             for (Creative creative : ad.getInline().getCreatives()) {
 
                 if (creative.getLinear() != null && creative.getLinear()
-                                                            .getVideoClicks() != null && creative.getLinear()
-                                                                                                 .getVideoClicks()
-                                                                                                 .getClickThrough() != null) {
+                        .getVideoClicks() != null && creative.getLinear()
+                        .getVideoClicks()
+                        .getClickThrough() != null) {
 
                     return creative.getLinear().getVideoClicks().getClickThrough().getValue();
                 }
@@ -503,8 +519,7 @@ public class AdResponseParserVast extends AdResponseParserBase {
                     return creative.getLinear().getVideoClicks().getClickTrackings();
                 }
             }
-        }
-        else if (ad.getWrapper() != null && ad.getWrapper().getCreatives() != null) {
+        } else if (ad.getWrapper() != null && ad.getWrapper().getCreatives() != null) {
 
             for (Creative creative : ad.getWrapper().getCreatives()) {
 
@@ -548,13 +563,14 @@ public class AdResponseParserVast extends AdResponseParserBase {
      * Returns best companion inside InLine
      */
     public static Companion getCompanionAd(@NonNull
-                                                   InLine inline) {
+                                           InLine inline,@Nullable Boolean isPortrait) {
 
         if (inline.getCreatives() == null) {
             return null;
         }
 
         Companion bestCompanion = null;
+        ArrayList<Companion> companionAdsNotNulls = new ArrayList<>();
         for (Creative creative : inline.getCreatives()) {
             ArrayList<Companion> companionAds = creative.getCompanionAds();
 
@@ -562,86 +578,34 @@ public class AdResponseParserVast extends AdResponseParserBase {
             if (companionAds == null || companionAds.size() == 0) {
                 continue;
             }
-
-            for (int i = 0; i < companionAds.size(); i++) {
-                try {
-                    Companion currentCompanion = companionAds.get(i);
-                    if (compareCompanions(currentCompanion, bestCompanion) == 1) {
-                        bestCompanion = currentCompanion;
-                    }
-                }
-                catch (IllegalArgumentException e) {
-                    LogUtil.error(TAG, e.getMessage());
-                }
+            for (Companion companion : companionAds) {
+                if(companion != null)
+                    companionAdsNotNulls.add(companion);
             }
         }
-
+        sortCompanions(isPortrait, companionAdsNotNulls);
+        if(!companionAdsNotNulls.isEmpty())
+            bestCompanion = companionAdsNotNulls.get(0);
         return bestCompanion;
     }
 
     /**
-     * Determine which is the better companion
-     * If 'companionA' equals 'companionB', return 0
-     * If 'companionA' is better, return 1
-     * If 'companionB' is better, return 2
+     * Sort companions better first
      *
      * Ranking rules
-     * 1st: HTML > IFRAME > STATIC
-     * 2nd: Size
+     * 1st: Device orientation
+     * 2nd: HTML > IFRAME > STATIC
+     * 3er: Size
      */
-    private static int compareCompanions(Companion companionA, Companion companionB)
-    throws IllegalArgumentException {
-        if (companionA == null && companionB == null) {
-            throw new IllegalArgumentException("No companions to compare") ;
+    private static void sortCompanions(@Nullable Boolean isPortrait, ArrayList<Companion> companions) {
+        Collections.sort(companions, new CompanionResolutionComparator());
+        Collections.sort(companions, new CompanionResourceFormatComparator());
+        if(isPortrait != null){
+            if (isPortrait) Collections.sort(companions, new CompanionPortraitOrientationComparator());
+            else Collections.sort(companions, new CompanionLandscapeOrientationComparator());
         }
-        else if (companionA == null) {
-            return 2;
-        }
-        else if (companionB == null) {
-            return 1;
-        }
-
-        Integer resourceFormatA = getCompanionResourceFormat(companionA);
-        Integer resourceFormatB = getCompanionResourceFormat(companionB);
-        if (resourceFormatA == null && resourceFormatB == null) {
-            throw new IllegalArgumentException("No companion resources to compare") ;
-        }
-        else if (resourceFormatA == null) {
-            return 2;
-        }
-        else if (resourceFormatB == null) {
-            return 1;
-        }
-        else if (resourceFormatA < resourceFormatB) {
-            return 1;
-        }
-        else if (resourceFormatA > resourceFormatB) {
-            return 2;
-        }
-
-        // If resource formats are equal, compare size
-        int resolutionA = getResolution(companionA.getWidth(), companionA.getHeight());
-        int resolutionB = getResolution(companionB.getWidth(), companionB.getHeight());
-        if (resolutionA < resolutionB)  {
-            return 2;
-        }
-        else if (resolutionA > resolutionB) {
-            return 1;
-        }
-
-        // Companions are equal
-        return 0;
     }
 
-    /**
-     * Returns product of width and height
-     */
-    private static int getResolution(String width, String height) {
-        int numWidth = Utils.isBlank(width) ? 0 : Integer.parseInt(width);
-        int numHeight = Utils.isBlank(height) ? 0 : Integer.parseInt(height);
-
-        return numWidth * numHeight;
-    }
 
     /**
      * Returns companion ad's resource format
@@ -726,5 +690,10 @@ public class AdResponseParserVast extends AdResponseParserBase {
         catch (Exception e) {
             return 0;
         }
+    }
+
+    private boolean isFileSizeOverMax(long durationMillis, int bitrate) {
+        double size = ((float) durationMillis / 60 / 1000) * bitrate * 0.0075;
+        return size > FileDownloadTask.maxMBFileSize;
     }
 }

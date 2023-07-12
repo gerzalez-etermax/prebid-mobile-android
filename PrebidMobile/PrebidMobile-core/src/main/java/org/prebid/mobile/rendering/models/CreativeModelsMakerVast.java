@@ -22,6 +22,7 @@ import org.prebid.mobile.api.data.AdFormat;
 import org.prebid.mobile.api.exceptions.AdException;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.rendering.errors.VastParseError;
+import org.prebid.mobile.rendering.interstitial.InterstitialSizes;
 import org.prebid.mobile.rendering.loading.AdLoadListener;
 import org.prebid.mobile.rendering.networking.tracking.TrackingManager;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
@@ -34,8 +35,11 @@ import org.prebid.mobile.rendering.video.vast.Tracking;
 import org.prebid.mobile.rendering.video.vast.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import static org.prebid.mobile.rendering.parser.AdResponseParserVast.*;
+
+import android.text.TextUtils;
 
 public class CreativeModelsMakerVast extends CreativeModelsMaker {
 
@@ -122,7 +126,7 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
 
             videoModel.setName(VIDEO_CREATIVE_TAG);
 
-            videoModel.setMediaUrl(latestVastWrapperParser.getMediaFileUrl(latestVastWrapperParser, 0));
+            videoModel.setMediaUrl(getMediaUrl());
             videoModel.setMediaDuration(Utils.getMsFrom(videoDuration));
             videoModel.setSkipOffset(Utils.getMsFrom(skipOffset));
             videoModel.setAdVerifications(adVerifications);
@@ -164,10 +168,12 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
             endCardModel.setHasEndCard(true);
 
             // Create CompanionAd object
+            Boolean isPortraitOrNull = TextUtils.isEmpty(adConfiguration.getInterstitialSize()) ? null : InterstitialSizes.isPortrait(adConfiguration.getInterstitialSize());
             Companion companionAd = AdResponseParserVast.getCompanionAd(latestVastWrapperParser.getVast()
-                                                                                               .getAds()
-                                                                                               .get(0)
-                                                                                               .getInline());
+                            .getAds()
+                            .get(0)
+                            .getInline(),
+                    isPortraitOrNull);
             if (companionAd != null) {
                 switch (AdResponseParserVast.getCompanionResourceFormat(companionAd)) {
                     case RESOURCE_FORMAT_HTML:
@@ -219,6 +225,14 @@ public class CreativeModelsMakerVast extends CreativeModelsMaker {
             LogUtil.error(TAG, "Video failed with: " + e.getMessage());
             notifyErrorListener("Video failed: " + e.getMessage());
         }
+    }
+
+    private String getMediaUrl() {
+        String mediaUrl = "";
+        List<String> mediaFileUrl = latestVastWrapperParser.getMediaFileUrl(latestVastWrapperParser, 0);
+        if (!mediaFileUrl.isEmpty())
+            mediaUrl = mediaFileUrl.get(0);
+        return mediaUrl;
     }
 
     private void notifyErrorListener(String msg) {

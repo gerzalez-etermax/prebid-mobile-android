@@ -16,21 +16,38 @@
 
 package org.prebid.mobile.rendering.parser;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.prebid.mobile.rendering.errors.VastParseError;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoLandscapeOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoPortraitOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorAsc;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorDes;
 import org.prebid.mobile.rendering.video.VideoAdEvent;
-import org.prebid.mobile.rendering.video.vast.*;
+import org.prebid.mobile.rendering.video.vast.Companion;
+import org.prebid.mobile.rendering.video.vast.Creative;
+import org.prebid.mobile.rendering.video.vast.HTMLResource;
+import org.prebid.mobile.rendering.video.vast.InLine;
+import org.prebid.mobile.rendering.video.vast.MediaFile;
+import org.prebid.mobile.rendering.video.vast.StaticResource;
+import org.prebid.mobile.rendering.video.vast.Tracking;
+import org.prebid.mobile.rendering.video.vast.Verification;
 import org.prebid.mobile.test.utils.ResourceUtils;
 import org.robolectric.RobolectricTestRunner;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import java.util.Comparator;
+import java.util.List;
 
 @RunWith(RobolectricTestRunner.class)
 public class AdResponseParserVastTest {
@@ -38,6 +55,11 @@ public class AdResponseParserVastTest {
     private final static String SAMPLE_GOOD_VAST = "vast_inline_linear.xml";
     private final static String SAMPLE_INLINE_ERROR_VAST = "vast_inline_error.xml";
     private final static String SAMPEL_INLINE_NONLINEAR = "vast_inline_nonlinear.xml";
+    private final static String SAMPLE_INLINE_MULTIPLE_MEDIA = "vast_inline_linear_multiple_media.xml";
+    private final static String SAMPLE_INLINE_MULTIPLE_MEDIA_HIGH_QUALITY_MIX_ORIENTATION = "vast_inline_linear_single_media_high_quality_mix_orientation.xml";
+    private final static String SAMPLE_INLINE_MULTIPLE_MEDIA_NO_BITRATE = "vast_inline_linear_multiple_media_no_bitrate.xml";
+    private final static String SAMPLE_INLINE_SINGLE_MEDIA = "vast_inline_linear_single_media.xml";
+    private final static String SAMPLE_INLINE_SINGLE_MEDIA_HIGH_QUALITY_ABOVE_MAX = "vast_inline_linear_single_media_high_quality_above_max.xml";
     private final static String WRONG_VAST = "vast_xmlError.xml";
     private final static String VAST_ERROR = "vast_error.xml";
     private final static String VAST_WRAPPER_LINEAR_NONLINEAR = "vast_wrapper_linear_nonlinear.xml";
@@ -154,8 +176,111 @@ public class AdResponseParserVastTest {
 
         AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML);
         assertEquals("http://i-cdn.prebid" +
-                     ".com/5a7/5a731840-5ae7-4dca-ba66-6e959bb763e2/be2" +
-                     "/be2cf3b2cf0648e0aa46c7c09afaf3f4.mp4", tempVast.getMediaFileUrl(vast, 0));
+                ".com/5a7/5a731840-5ae7-4dca-ba66-6e959bb763e2/be2" +
+                "/be2cf3b2cf0648e0aa46c7c09afaf3f4.mp4", tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetHighQualityMediaFileUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorDes());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-4000kbs-29.97fps-48khz-192kbs-1080p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=4016&w=1920&h=1080&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetHighQualityMediaFileUrlSingleHigh() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorDes());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_SINGLE_MEDIA_HIGH_QUALITY_ABOVE_MAX);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertTrue(tempVast.getMediaFileUrl(vast, 0).isEmpty());
+    }
+
+    @Test
+    public void testGetHighQualityMediaFileUrlNoBitrate() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorDes());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA_NO_BITRATE);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        List<String> mediaFileUrls = tempVast.getMediaFileUrl(vast, 0);
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-4000kbs-29.97fps-48khz-192kbs-1080p.mp4?c=591316303365099253&a=582615902513680218&d=21.334&br=4016&w=1920&h=1080&ct=1014,&ca=3,5,",
+                mediaFileUrls.get(0));
+    }
+
+    @Test
+    public void testGetLowQualityMediaFileUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorAsc());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetLowQualityMediaFileUrlUniqueUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorAsc());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_SINGLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-300kbs-15fps-48khz-96kbs-360p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=329&w=640&h=360&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetPortraitMediaFileUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoPortraitOrientationComparator());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://cdn-a.amazon-adsystem.com/video/752ebf3e-79de-4868-a063-558b7afc01c6/MP4-900kbs-15fps-48khz-96kbs-480p.mp4?c=591316303365099253&a=582615902513680218&d=21.4&br=941&w=854&h=480&ct=1014,&ca=3,5,",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetLandscapeMediaFileUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoLandscapeOrientationComparator());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA_HIGH_QUALITY_MIX_ORIENTATION);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://url.1920x1080.com",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+    }
+
+    @Test
+    public void testGetPortraitLowQualityMediaFileUrl() throws Exception {
+        ArrayList<Comparator<MediaFile>> mediaFileSorterStrategies = new ArrayList<>();
+        mediaFileSorterStrategies.add(new VideoQualityComparatorAsc());
+        mediaFileSorterStrategies.add(new VideoPortraitOrientationComparator());
+        String vastXML = ResourceUtils.convertResourceToString(SAMPLE_INLINE_MULTIPLE_MEDIA_HIGH_QUALITY_MIX_ORIENTATION);
+        AdResponseParserVastHelper vast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+
+        AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML, mediaFileSorterStrategies);
+        assertEquals("https://url.480x854.com",
+                tempVast.getMediaFileUrl(vast, 0).get(0));
+        assertEquals("https://url.1080x1920.com",
+                tempVast.getMediaFileUrl(vast, 0).get(1));
+        assertEquals("https://url.854x480.com",
+                tempVast.getMediaFileUrl(vast, 0).get(2));
+        assertEquals("https://url.1920x1080.com",
+                tempVast.getMediaFileUrl(vast, 0).get(3));
     }
 
     @Test
@@ -165,8 +290,8 @@ public class AdResponseParserVastTest {
 
         AdResponseParserVastHelper tempVast = new AdResponseParserVastHelper(vastXML);
         assertEquals("http://oxv4support-d3.prebidenterprise.com/v/1.0/ri?did" +
-                     ".adid=2c544905-f613-46ac-95f4-7d81e8fc3505&ts" +
-                     "=1fHU9MXxyaWQ9MmVkNDBjOGYtNjA4YS00ZDY5LWIyNzMtMDBjYWZiNjEyMWQ0fHJ0PTE0MzM4MDQ5Mjd8YXVpZD01MzcwNzQzNzN8YXVtPURNSUQuTElORUFSVklERU98c2lkPTUzNzA2NDIxMXxwdWI9NTM3MDcxNzg3fHBjPVVTRHxyYWlkPTVlOTk0N2E1LWM5YzItNDNjZi1hZTY3LTMzMjZjNWU2N2IwYnxhaWQ9NTM3MTI5MDI1fHQ9M3xhcz02NDB4MzYwfGxpZD01MzcxMDYzNzR8b2lkPTUzNzA4ODg4NnxwPTEwMDB8cHI9MTAwMHxhZHY9NTM3MDcxNzgyfGFjPVVTRHxwbT1QUklDSU5HLkNQTXxibT1CVVlJTkcuTk9OR1VBUkFOVEVFRHx1cj1XUTVDVHpydG51", tempVast.getImpressions(vast, 0).get(0).getValue());
+                ".adid=2c544905-f613-46ac-95f4-7d81e8fc3505&ts" +
+                "=1fHU9MXxyaWQ9MmVkNDBjOGYtNjA4YS00ZDY5LWIyNzMtMDBjYWZiNjEyMWQ0fHJ0PTE0MzM4MDQ5Mjd8YXVpZD01MzcwNzQzNzN8YXVtPURNSUQuTElORUFSVklERU98c2lkPTUzNzA2NDIxMXxwdWI9NTM3MDcxNzg3fHBjPVVTRHxyYWlkPTVlOTk0N2E1LWM5YzItNDNjZi1hZTY3LTMzMjZjNWU2N2IwYnxhaWQ9NTM3MTI5MDI1fHQ9M3xhcz02NDB4MzYwfGxpZD01MzcxMDYzNzR8b2lkPTUzNzA4ODg4NnxwPTEwMDB8cHI9MTAwMHxhZHY9NTM3MDcxNzgyfGFjPVVTRHxwbT1QUklDSU5HLkNQTXxibT1CVVlJTkcuTk9OR1VBUkFOVEVFRHx1cj1XUTVDVHpydG51", tempVast.getImpressions(vast, 0).get(0).getValue());
     }
 
     @Test
@@ -837,19 +962,19 @@ public class AdResponseParserVastTest {
         // Null creatives
         mockInLine = setupInLine();
         mockInLine.setCreatives(null);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // Empty creatives list
         mockInLine = setupInLine();
         mockInLine.setCreatives(new ArrayList<>());
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // Empty companion ad list
         mockInLine = setupInLine();
         mockInLine.getCreatives().get(0).setCompanionAds(new ArrayList<>());
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertNull(result);
 
         // One companion
@@ -857,7 +982,7 @@ public class AdResponseParserVastTest {
         companions = mockInLine.getCreatives().get(0).getCompanionAds();
         mockCompanionA = mock(Companion.class);
         companions.add(mockCompanionA);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertEquals(mockCompanionA, result);
 
         // Companion B format better than Companion A format
@@ -873,7 +998,7 @@ public class AdResponseParserVastTest {
         when(mockCompanionB.getHeight()).thenReturn("1");
         when(mockCompanionB.getHtmlResource()).thenReturn(mock(HTMLResource.class));
         companions.add(mockCompanionB);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, null);
         assertEquals(mockCompanionB, result);
 
         // Same format for Companion A & B, but B has better resolution
@@ -889,8 +1014,40 @@ public class AdResponseParserVastTest {
         when(mockCompanionB.getHeight()).thenReturn("2");
         when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
         companions.add(mockCompanionB);
-        result = AdResponseParserVast.getCompanionAd(mockInLine);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, true);
         assertEquals(mockCompanionB, result);
+
+        // Different format, resolution for Companion A & B, but A has right orientation portrait
+        mockInLine = setupInLine();
+        companions = mockInLine.getCreatives().get(0).getCompanionAds();
+        mockCompanionA = mock(Companion.class);
+        when(mockCompanionA.getWidth()).thenReturn("10");
+        when(mockCompanionA.getHeight()).thenReturn("20");
+        when(mockCompanionA.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionA);
+        mockCompanionB = mock(Companion.class);
+        when(mockCompanionB.getWidth()).thenReturn("25");
+        when(mockCompanionB.getHeight()).thenReturn("15");
+        when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionB);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, true);
+        assertEquals(mockCompanionA, result);
+
+        // Different format, resolution for Companion A & B, but A has right orientation landscape
+        mockInLine = setupInLine();
+        companions = mockInLine.getCreatives().get(0).getCompanionAds();
+        mockCompanionA = mock(Companion.class);
+        when(mockCompanionA.getWidth()).thenReturn("20");
+        when(mockCompanionA.getHeight()).thenReturn("10");
+        when(mockCompanionA.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionA);
+        mockCompanionB = mock(Companion.class);
+        when(mockCompanionB.getWidth()).thenReturn("15");
+        when(mockCompanionB.getHeight()).thenReturn("25");
+        when(mockCompanionB.getStaticResource()).thenReturn(mock(StaticResource.class));
+        companions.add(mockCompanionB);
+        result = AdResponseParserVast.getCompanionAd(mockInLine, false);
+        assertEquals(mockCompanionA, result);
     }
 
     private InLine setupInLine() {

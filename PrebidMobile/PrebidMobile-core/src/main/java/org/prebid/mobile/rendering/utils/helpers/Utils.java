@@ -711,4 +711,22 @@ public final class Utils {
             e.printStackTrace();
         }
     }
+
+    /**
+     * @param stringValue which is a string representation of a int
+     * @return the int number if is a valid string value, 1 otherwise
+     */
+    public static int getIntOrOne(String stringValue) {
+        return Utils.isBlank(stringValue)
+                ? 1 : Integer.parseInt(stringValue);
+    }
+
+    /**
+     * @param stringValue which is a string representation of a int
+     * @return the int number if is a valid string value, 0 otherwise
+     */
+    public static int getIntOrZero(String stringValue) {
+        return Utils.isBlank(stringValue)
+                ? 0 : Integer.parseInt(stringValue);
+    }
 }

@@ -346,6 +346,12 @@ public class UtilsTest extends TestCase {
     }
 
     @Test
+    public void isVastSingleQuote_ReturnTrue() throws IOException {
+        String responseString = ResourceUtils.convertResourceToString("vast_single_quote.xml");
+        assertTrue(Utils.isVast(responseString));
+    }
+
+    @Test
     public void isVastWithEmptyData_ReturnFalse() {
         assertFalse(Utils.isVast(""));
     }

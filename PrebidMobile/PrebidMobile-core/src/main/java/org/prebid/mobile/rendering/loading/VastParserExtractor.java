@@ -21,6 +21,7 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import org.prebid.mobile.LogUtil;
+import org.prebid.mobile.PrebidMobile;
 import org.prebid.mobile.api.exceptions.AdException;
 import org.prebid.mobile.rendering.errors.VastParseError;
 import org.prebid.mobile.rendering.models.internal.VastExtractorResult;
@@ -29,8 +30,16 @@ import org.prebid.mobile.rendering.networking.ResponseHandler;
 import org.prebid.mobile.rendering.networking.modelcontrollers.AsyncVastLoader;
 import org.prebid.mobile.rendering.parser.AdResponseParserBase;
 import org.prebid.mobile.rendering.parser.AdResponseParserVast;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoLandscapeOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoPortraitOrientationComparator;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorAsc;
+import org.prebid.mobile.rendering.parser.mediaselector.VideoQualityComparatorDes;
 import org.prebid.mobile.rendering.utils.helpers.Utils;
+import org.prebid.mobile.rendering.video.vast.MediaFile;
 import org.prebid.mobile.rendering.video.vast.VASTErrorCodes;
+
+import java.util.ArrayList;
+import java.util.Comparator;
 
 public class VastParserExtractor {
 
@@ -45,6 +54,8 @@ public class VastParserExtractor {
     private AdResponseParserVast latestVastWrapperParser;
 
     private int vastWrapperCount;
+
+    private boolean isPortrait = true;
 
     private final ResponseHandler responseHandler = new ResponseHandler() {
         @Override
@@ -78,7 +89,8 @@ public class VastParserExtractor {
         }
     }
 
-    public void extract(String vast) {
+    public void extract(String vast, boolean isPortrait) {
+        this.isPortrait = isPortrait;
         performVastUnwrap(vast);
     }
 
@@ -95,7 +107,7 @@ public class VastParserExtractor {
         // Parse the response.
         AdResponseParserVast adResponseParserVast;
         try {
-            adResponseParserVast = new AdResponseParserVast(vast);
+            adResponseParserVast = new AdResponseParserVast(vast, getMediaFileSelector());
         } catch (VastParseError e) {
             LogUtil.error(TAG, "AdResponseParserVast creation failed: " + Log.getStackTraceString(e));
 
@@ -137,6 +149,19 @@ public class VastParserExtractor {
             final AdResponseParserBase[] parserArray = {rootVastParser, latestVastWrapperParser};
             listener.onResult(new VastExtractorResult(parserArray));
         }
+    }
+
+    private ArrayList<Comparator<MediaFile>> getMediaFileSelector() {
+        Comparator<MediaFile> orientationSorter = isPortrait ? new VideoPortraitOrientationComparator() : new VideoLandscapeOrientationComparator();
+        ArrayList<Comparator<MediaFile>> selectors = new ArrayList<>();
+        selectors.add(orientationSorter);
+        switch (PrebidMobile.vastMediaSelectionStrategy) {
+            case LOW_QUALITY:
+                selectors.add(new VideoQualityComparatorDes());
+            case HIGH_LIMITED_QUALITY:
+                selectors.add(new VideoQualityComparatorAsc());
+        }
+        return selectors;
     }
 
     private void failedToLoadAd(String msg) {
