@@ -42,6 +42,7 @@ import org.prebid.mobile.rendering.views.interstitial.InterstitialManager;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Stack;
 
 public class CreativeFactory {
 
@@ -57,6 +58,8 @@ public class CreativeFactory {
     private final InterstitialManager interstitialManager;
     private TimeoutState timeoutState = TimeoutState.PENDING;
     private Handler timeoutHandler = new Handler(Looper.getMainLooper());
+
+    private Stack<Runnable> addedRunnables = new Stack<>();
 
     public CreativeFactory(
             Context context,
@@ -110,7 +113,7 @@ public class CreativeFactory {
         if (creative != null) {
             creative.destroy();
         }
-        timeoutHandler.removeCallbacks(null);
+        removePendingRunnables();
     }
 
     public AbstractCreative getCreative() {
@@ -203,12 +206,21 @@ public class CreativeFactory {
 
     private void markWorkStart(long timeout) {
         timeoutState = TimeoutState.RUNNING;
-        timeoutHandler.postDelayed(() -> {
+        Runnable timeoutRunnable = () -> {
             if (timeoutState != TimeoutState.FINISHED) {
                 timeoutState = TimeoutState.EXPIRED;
                 listener.onFailure((new AdException(AdException.INTERNAL_ERROR, "Creative factory Timeout")));
             }
-        }, timeout);
+        };
+        addedRunnables.add(timeoutRunnable);
+        timeoutHandler.postDelayed(timeoutRunnable, timeout);
+    }
+
+    private void removePendingRunnables() {
+        while (!addedRunnables.isEmpty()) {
+            final Runnable runnable = addedRunnables.pop();
+            timeoutHandler.removeCallbacks(runnable);
+        }
     }
 
     /**
@@ -262,7 +274,7 @@ public class CreativeFactory {
                 return;
             }
 
-            creativeFactory.timeoutHandler.removeCallbacks(null);
+            creativeFactory.removePendingRunnables();
 
             creativeFactory.listener.onFailure(error);
         }
