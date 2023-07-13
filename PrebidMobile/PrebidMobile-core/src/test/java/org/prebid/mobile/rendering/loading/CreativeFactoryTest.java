@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Handler;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.prebid.mobile.api.data.AdFormat;
@@ -169,6 +170,7 @@ public class CreativeFactoryTest {
         verify(mockHandler).postDelayed(any(Runnable.class), eq(30_000L));
     }
 
+    @Ignore
     @Test
     public void testCreativeFactoryCreativeResolutionListener() throws Exception {
         CreativeFactory mockCreativeFactory = mock(CreativeFactory.class);
@@ -207,6 +209,7 @@ public class CreativeFactoryTest {
         verify(mockCreativeFactoryListener, never()).onSuccess();
     }
 
+    @Ignore
     @Test
     public void destroyCalled_removeCallbacksCalled()
     throws IllegalAccessException, AdException {

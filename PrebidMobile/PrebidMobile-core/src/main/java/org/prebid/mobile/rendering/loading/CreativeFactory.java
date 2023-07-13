@@ -59,7 +59,7 @@ public class CreativeFactory {
     private TimeoutState timeoutState = TimeoutState.PENDING;
     private Handler timeoutHandler = new Handler(Looper.getMainLooper());
 
-    private Stack<Runnable> addedRunnables = new Stack<>();
+    private Stack<Runnable> addedRunnables;
 
     public CreativeFactory(
             Context context,
@@ -85,6 +85,7 @@ public class CreativeFactory {
         this.creativeModel = creativeModel;
         this.omAdSessionManager = omAdSessionManager;
         this.interstitialManager = interstitialManager;
+        this.addedRunnables = new Stack<>();
     }
 
     public void start() {
