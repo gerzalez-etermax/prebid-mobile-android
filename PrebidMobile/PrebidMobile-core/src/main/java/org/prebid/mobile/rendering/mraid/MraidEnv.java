@@ -34,7 +34,7 @@ public class MraidEnv {
                 + getStringPropertyWithSeparator("sdk", PrebidMobile.SDK_NAME)
                 + getStringPropertyWithSeparator("sdkVersion", PrebidMobile.SDK_VERSION)
                 + getStringPropertyWithSeparator("appId", AppInfoManager.getPackageName())
-                + getStringPropertyWithSeparator("ifa", AdIdManager.getAdId())
+                + getStringPropertyWithSeparator("ifa", getCoppaCompliantAdId())
                 + getBooleanPropertyWithSeparator("limitAdTracking", AdIdManager.isLimitAdTrackingEnabled(), ",")
                 + getBooleanPropertyWithSeparator("coppa", PrebidMobile.isCoppaEnabled, "")
                 + "};";
@@ -47,5 +47,12 @@ public class MraidEnv {
 
     static String getBooleanPropertyWithSeparator(String propertyName, boolean propertyValue, String separator) {
         return String.format("%s: %s%s", propertyName, propertyValue, separator);
+    }
+
+    private static String getCoppaCompliantAdId() {
+        if (PrebidMobile.isCoppaEnabled) {
+            return null;
+        }
+        return AdIdManager.getAdId();
     }
 }

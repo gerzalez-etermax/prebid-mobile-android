@@ -23,6 +23,7 @@ import android.app.Activity;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.prebid.mobile.PrebidMobile;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.reflection.sdk.ManagersResolverReflection;
 import org.prebid.mobile.rendering.models.openrtb.BidRequest;
@@ -78,5 +79,37 @@ public class DeviceInfoParameterBuilderTest {
 
         assertJsonEquals(expectedBidRequest.getJsonObject(),
                      adRequestInput.getBidRequest().getJsonObject());
+    }
+
+    @Test
+    public void testAppendBuilderParametersCoppaCompliant() throws Exception {
+        PrebidMobile.isCoppaEnabled = true;
+        AdIdManager.setAdId("1234");
+        BidRequest expectedBidRequest = new BidRequest();
+        final Device expectedBidRequestDevice = expectedBidRequest.getDevice();
+        final String ipAddress = "192.168.0.1";
+        final String carrier = "carrier";
+
+        AdUnitConfiguration adConfiguration = new AdUnitConfiguration();
+
+        ParameterBuilder builder = new DeviceInfoParameterBuilder(adConfiguration);
+        AdRequestInput adRequestInput = new AdRequestInput();
+        builder.appendBuilderParameters(adRequestInput);
+
+        expectedBidRequestDevice.os = DeviceInfoParameterBuilder.PLATFORM_VALUE;
+        expectedBidRequestDevice.w = SCREEN_WIDTH;
+        expectedBidRequestDevice.h = SCREEN_HEIGHT;
+        expectedBidRequestDevice.language = Locale.getDefault().getLanguage();
+        expectedBidRequestDevice.osv = "4.4";
+        expectedBidRequestDevice.os = "Android";
+        expectedBidRequestDevice.model = "robolectric";
+        expectedBidRequestDevice.make = "unknown";
+        expectedBidRequestDevice.pxratio = 1f;
+        expectedBidRequestDevice.ua = AppInfoManager.getUserAgent();
+        expectedBidRequestDevice.ifa = null;
+        expectedBidRequestDevice.lmt = AdIdManager.isLimitAdTrackingEnabled() ? 1 : 0;
+
+        assertJsonEquals(expectedBidRequest.getJsonObject(),
+                adRequestInput.getBidRequest().getJsonObject());
     }
 }

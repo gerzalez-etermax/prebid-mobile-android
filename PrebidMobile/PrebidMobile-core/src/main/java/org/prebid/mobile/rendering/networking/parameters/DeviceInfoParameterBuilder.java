@@ -18,6 +18,7 @@ package org.prebid.mobile.rendering.networking.parameters;
 
 import android.os.Build;
 import org.prebid.mobile.AdSize;
+import org.prebid.mobile.PrebidMobile;
 import org.prebid.mobile.configuration.AdUnitConfiguration;
 import org.prebid.mobile.rendering.bidding.data.bid.Prebid;
 import org.prebid.mobile.rendering.models.openrtb.bidRequests.Device;
@@ -56,7 +57,7 @@ public class DeviceInfoParameterBuilder extends ParameterBuilder {
             }
 
             String advertisingId = AdIdManager.getAdId();
-            if (Utils.isNotBlank(advertisingId)) {
+            if (Utils.isNotBlank(advertisingId) && !PrebidMobile.isCoppaEnabled) {
                 device.ifa = advertisingId;
             }
 
